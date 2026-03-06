@@ -1,0 +1,29 @@
+# company-OSINT.com
+
+> company-OSINT.com ist eine B2B-SaaS-Plattform mit einer umfangreichen Datenbank deutscher Unternehmen aus dem Handelsregister, angereichert mit Website-Metadaten, Technologie-Stack-Erkennung und DSGVO-Compliance-Daten. Nutzer können die Datenbank filtern und passende B2B-Leads erwerben — über die Web-Oberfläche oder einen MCP-Server für AI-Agenten.
+
+## Dokumentation
+
+- [Preise](https://www.company-osint.com/de/preise): Preismodelle und Pakete
+- [FAQ](https://www.company-osint.com/de/faq): Häufig gestellte Fragen
+- [MCP-Server-Dokumentation](https://www.company-osint.com/de/mcp-server): Einrichtung und Nutzung des Model Context Protocol Servers für AI-Agenten
+- [Kontakt](https://www.company-osint.com/de/kontakt): Kontaktformular und Support
+- [Vollständige LLM-Dokumentation](https://www.company-osint.com/llms-full.txt): Alle Details in einem Dokument
+
+## Funktionen
+
+- [Startseite](https://www.company-osint.com/de): Überblick über die Plattform und ihre Features
+- [Demo](https://www.company-osint.com/de/Demo): Live-Demo der Suchfunktion
+- [Registrierung](https://www.company-osint.com/de/registrieren): Konto erstellen
+
+## MCP-Server
+
+- Endpoint: `https://www.company-osint.com/mcp`
+- Authentifizierung: Bearer Token (erstellt im Dashboard unter API-Token)
+- Verfügbare Tools: `search_companies`, `get_company_details`, `list_sectors`, `list_software`, `list_tools`
+
+## Rechtliches
+
+- [Impressum](https://www.company-osint.com/de/impressum): Anbieterkennzeichnung
+- [Datenschutz](https://www.company-osint.com/de/datenschutz): Datenschutzerklärung
+- [AGB](https://www.company-osint.com/de/agb): Allgemeine Geschäftsbedingungen

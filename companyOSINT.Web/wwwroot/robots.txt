@@ -1,0 +1,288 @@
+# robots.txt für www.company-osint.com
+# Letzte Aktualisierung: 2026-03-06
+
+# =============================================================================
+# Suchmaschinen-Crawler (erlaubt)
+# =============================================================================
+
+User-agent: Googlebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: Yandex
+Allow: /
+
+User-agent: DuckDuckBot
+Allow: /
+
+# =============================================================================
+# AI Retrieval-Bots (erlaubt — damit Content in AI-Suchantworten erscheint)
+# =============================================================================
+
+User-agent: ChatGPT-User
+Allow: /
+Disallow: /api/
+Disallow: /swagger/
+Disallow: /mcp
+Disallow: /de/dashboard/
+Disallow: /de/anmelden
+Disallow: /de/registrieren
+Disallow: /de/abmelden
+Disallow: /de/zwei-faktor
+Disallow: /de/recovery-code
+Disallow: /de/email-bestaetigen
+Disallow: /de/email-aendern-bestaetigen
+Disallow: /de/registrierung-bestaetigung
+
+User-agent: Claude-User
+Allow: /
+Disallow: /api/
+Disallow: /swagger/
+Disallow: /mcp
+Disallow: /de/dashboard/
+Disallow: /de/anmelden
+Disallow: /de/registrieren
+Disallow: /de/abmelden
+Disallow: /de/zwei-faktor
+Disallow: /de/recovery-code
+Disallow: /de/email-bestaetigen
+Disallow: /de/email-aendern-bestaetigen
+Disallow: /de/registrierung-bestaetigung
+
+User-agent: Claude-SearchBot
+Allow: /
+Disallow: /api/
+Disallow: /swagger/
+Disallow: /mcp
+Disallow: /de/dashboard/
+Disallow: /de/anmelden
+Disallow: /de/registrieren
+Disallow: /de/abmelden
+Disallow: /de/zwei-faktor
+Disallow: /de/recovery-code
+Disallow: /de/email-bestaetigen
+Disallow: /de/email-aendern-bestaetigen
+Disallow: /de/registrierung-bestaetigung
+
+User-agent: Perplexity-User
+Allow: /
+Disallow: /api/
+Disallow: /swagger/
+Disallow: /mcp
+Disallow: /de/dashboard/
+Disallow: /de/anmelden
+Disallow: /de/registrieren
+Disallow: /de/abmelden
+Disallow: /de/zwei-faktor
+Disallow: /de/recovery-code
+Disallow: /de/email-bestaetigen
+Disallow: /de/email-aendern-bestaetigen
+Disallow: /de/registrierung-bestaetigung
+
+User-agent: OAI-SearchBot
+Allow: /
+Disallow: /api/
+Disallow: /swagger/
+Disallow: /mcp
+Disallow: /de/dashboard/
+Disallow: /de/anmelden
+Disallow: /de/registrieren
+Disallow: /de/abmelden
+Disallow: /de/zwei-faktor
+Disallow: /de/recovery-code
+Disallow: /de/email-bestaetigen
+Disallow: /de/email-aendern-bestaetigen
+Disallow: /de/registrierung-bestaetigung
+
+# =============================================================================
+# AI Training-Bots (blockiert — kein Training mit unseren Daten)
+# =============================================================================
+
+# OpenAI Training
+User-agent: GPTBot
+Disallow: /
+
+# Google AI Training
+User-agent: Google-Extended
+Disallow: /
+
+# Common Crawl (häufig für AI-Training genutzt)
+User-agent: CCBot
+Disallow: /
+
+# Anthropic Training
+User-agent: ClaudeBot
+Disallow: /
+
+User-agent: anthropic-ai
+Disallow: /
+
+User-agent: Claude-Web
+Disallow: /
+
+# Meta
+User-agent: FacebookBot
+Disallow: /
+
+User-agent: facebookexternalhit
+Disallow: /
+
+User-agent: meta-externalagent
+Disallow: /
+
+User-agent: Meta-ExternalAgent
+Disallow: /
+
+User-agent: meta-externalfetcher
+Disallow: /
+
+User-agent: Meta-ExternalFetcher
+Disallow: /
+
+# Perplexity Training
+User-agent: PerplexityBot
+Disallow: /
+
+# Bytedance / TikTok
+User-agent: Bytespider
+Disallow: /
+
+User-agent: TikTokSpider
+Disallow: /
+
+# Cohere
+User-agent: cohere-ai
+Disallow: /
+
+User-agent: cohere-training-data-crawler
+Disallow: /
+
+# Amazon
+User-agent: Amazonbot
+Disallow: /
+
+User-agent: AmazonBuyForMe
+Disallow: /
+
+# Apple
+User-agent: Applebot-Extended
+Disallow: /
+
+# Weitere bekannte AI-Crawler
+User-agent: AI2Bot
+Disallow: /
+
+User-agent: AI2Bot-DeepResearchEval
+Disallow: /
+
+User-agent: Ai2Bot-Dolma
+Disallow: /
+
+User-agent: Diffbot
+Disallow: /
+
+User-agent: img2dataset
+Disallow: /
+
+User-agent: DeepSeekBot
+Disallow: /
+
+User-agent: PetalBot
+Disallow: /
+
+User-agent: Scrapy
+Disallow: /
+
+User-agent: SemrushBot-OCOB
+Disallow: /
+
+User-agent: SemrushBot-SWA
+Disallow: /
+
+User-agent: YouBot
+Disallow: /
+
+User-agent: PhindBot
+Disallow: /
+
+User-agent: Crawl4AI
+Disallow: /
+
+User-agent: FirecrawlAgent
+Disallow: /
+
+User-agent: MistralAI-User
+Disallow: /
+
+User-agent: Operator
+Disallow: /
+
+User-agent: GoogleOther
+Disallow: /
+
+User-agent: GoogleOther-Image
+Disallow: /
+
+User-agent: GoogleOther-Video
+Disallow: /
+
+User-agent: Google-CloudVertexBot
+Disallow: /
+
+User-agent: Gemini-Deep-Research
+Disallow: /
+
+User-agent: Google-NotebookLM
+Disallow: /
+
+User-agent: NotebookLM
+Disallow: /
+
+User-agent: NovaAct
+Disallow: /
+
+User-agent: WRTNBot
+Disallow: /
+
+User-agent: Timpibot
+Disallow: /
+
+# =============================================================================
+# Allgemeine Regeln für alle anderen Bots
+# =============================================================================
+
+User-agent: *
+Allow: /de
+Allow: /de/preise
+Allow: /de/faq
+Allow: /de/kontakt
+Allow: /de/Demo
+Allow: /de/mcp-server
+Allow: /de/impressum
+Allow: /de/datenschutz
+Allow: /de/agb
+Allow: /llms.txt
+Allow: /llms-full.txt
+Allow: /css/
+Allow: /fonts/
+Allow: /images/
+Disallow: /api/
+Disallow: /swagger/
+Disallow: /mcp
+Disallow: /de/dashboard/
+Disallow: /de/anmelden
+Disallow: /de/registrieren
+Disallow: /de/abmelden
+Disallow: /de/zwei-faktor
+Disallow: /de/recovery-code
+Disallow: /de/email-bestaetigen
+Disallow: /de/email-aendern-bestaetigen
+Disallow: /de/registrierung-bestaetigung
+
+# =============================================================================
+# Sitemap
+# =============================================================================
+
+Sitemap: https://www.company-osint.com/sitemap.xml

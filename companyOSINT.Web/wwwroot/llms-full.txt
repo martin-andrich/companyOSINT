@@ -1,0 +1,166 @@
+# company-OSINT.com
+
+> company-OSINT.com ist eine B2B-SaaS-Plattform mit einer umfangreichen Datenbank deutscher Unternehmen aus dem Handelsregister, angereichert mit Website-Metadaten, Technologie-Stack-Erkennung und DSGVO-Compliance-Daten. Nutzer können die Datenbank filtern und passende B2B-Leads erwerben — über die Web-Oberfläche oder einen MCP-Server für AI-Agenten.
+
+## Plattform-Überblick
+
+company-OSINT.com aggregiert Daten aus dem deutschen Handelsregister und reichert diese automatisch mit technischen Website-Analysen an. Die Plattform richtet sich an B2B-Vertriebsteams, Marketingagenturen und Datenanalysten, die gezielt nach Unternehmen suchen, die bestimmte Technologien einsetzen, in bestimmten Regionen ansässig sind oder spezifische DSGVO-Compliance-Merkmale aufweisen.
+
+### Datenquellen
+
+- Deutsches Handelsregister (Firmenname, Adresse, Rechtsform, Registernummer, Geschäftsführer)
+- Automatische Website-Erkennung via Google-Suche und Impressum-Abgleich
+- Technische Website-Analyse (CMS, Frameworks, Tools, SSL, Performance, Consent-Management)
+
+### Kerndaten pro Unternehmen
+
+- Firmenname, Rechtsform, Registergericht, Registernummer
+- Adresse, PLZ, Bundesland
+- Branche (aus ~65 standardisierten Sektoren nach WZ 2008)
+- Geschäftstätigkeit (Kurzbeschreibung)
+- Kontaktpersonen (Geschäftsführer, Vertretungsberechtigte)
+- Websites mit technischen Metadaten
+
+### Kerndaten pro Website
+
+- URL der Website und des Impressums
+- HTTP-Statuscode, IP-Adresse
+- SSL-Gültigkeit
+- Time-to-First-Byte (TTFB) Performance
+- Erkannte Software/CMS (z.B. WordPress, Shopware, TYPO3, Magento, Joomla)
+- Erkannte Tools (z.B. Google Analytics, Matomo, Cloudflare, Google Fonts)
+- Consent-Manager vorhanden (ja/nein)
+- Requests ohne Einwilligung (Anzahl)
+- Cookies ohne Einwilligung (Anzahl)
+
+## MCP-Server (Model Context Protocol)
+
+company-OSINT.com bietet einen MCP-Server, über den AI-Agenten direkt auf die Unternehmensdatenbank zugreifen können.
+
+### Verbindung
+
+- **Endpoint:** `https://www.company-osint.com/mcp`
+- **Protokoll:** Model Context Protocol (MCP) über HTTP mit SSE (Server-Sent Events)
+- **Authentifizierung:** Bearer Token im Authorization-Header
+- **Token erstellen:** Im Dashboard unter "API-Token" (`/de/dashboard/api-token`)
+
+### MCP-Konfiguration (für Claude Desktop, Cursor, etc.)
+
+```json
+{
+  "mcpServers": {
+    "find-a-company": {
+      "url": "https://www.company-osint.com/mcp",
+      "headers": {
+        "Authorization": "Bearer <IHR_TOKEN>"
+      }
+    }
+  }
+}
+```
+
+### Verfügbare MCP-Tools
+
+#### search_companies
+
+Sucht nach deutschen Unternehmen mit umfangreichen Filtermöglichkeiten. Gibt paginierte Ergebnisse zurück.
+
+**Parameter:**
+
+| Parameter | Typ | Beschreibung |
+|---|---|---|
+| postalCode | string | Deutsche Postleitzahl (PLZ), z.B. "01067" für Dresden |
+| radiusKm | int | Suchradius in Kilometern um die PLZ (Standard: 50) |
+| sectorIds | List\<Guid\> | Branchen-IDs zum Filtern (IDs über `list_sectors` abrufen) |
+| softwareNames | List\<string\> | Software-/CMS-Namen, z.B. ["WordPress", "Shopware"] |
+| toolNames | List\<string\> | Tool-Namen, z.B. ["Google Analytics", "Matomo"] |
+| sslValid | bool | Nach SSL-Zertifikat-Gültigkeit filtern |
+| consentManagerFound | bool | Nach Consent-Manager-Vorhandensein filtern |
+| hasWebsite | bool | Nur Unternehmen mit/ohne Website |
+| ttfbCategory | string | Performance-Filter: "fast" (≤800ms), "medium" (800–1800ms), "slow" (>1800ms) |
+| hasRequestsWithoutConsent | bool | Nach Requests ohne Einwilligung filtern |
+| page | int | Seitennummer (Standard: 1) |
+| pageSize | int | Ergebnisse pro Seite, max. 100 (Standard: 25) |
+
+**Antwort:** JSON mit TotalCount, Page, PageSize, TotalPages und einer Liste von Companies (Id, Name, RegisteredAddress, Website, Activity).
+
+**Empfohlener Workflow:**
+1. `list_sectors` aufrufen, um verfügbare Branchen-IDs zu erhalten
+2. `list_software` aufrufen, um erkannte Software-Namen zu erhalten
+3. `list_tools` aufrufen, um erkannte Tool-Namen zu erhalten
+4. `search_companies` mit den gewünschten Filtern aufrufen
+5. `get_company_details` für interessante Treffer aufrufen
+
+#### get_company_details
+
+Ruft vollständige Details für ein bestimmtes Unternehmen ab, inklusive Kontaktpersonen, Websites und erkannter Technologien.
+
+**Parameter:**
+
+| Parameter | Typ | Beschreibung |
+|---|---|---|
+| companyId | Guid | Die Unternehmens-ID (GUID) |
+
+**Antwort:** JSON mit allen Unternehmensdaten: Name, Adresse, PLZ, Bundesland, Registerdaten, Branche, Geschäftstätigkeit, Kontaktpersonen (Name, Vorname, Nachname, Titel, Position, Typ, Stadt), Websites (URL, Impressum, HTTP-Status, SSL, Consent-Manager, Software, Tools).
+
+#### list_sectors
+
+Listet alle verfügbaren Branchen mit IDs und deutschen Namen auf. Nutze die IDs als Filter in `search_companies`.
+
+**Parameter:** Keine
+
+**Antwort:** JSON-Array mit Objekten (Id, Name). Beispiele: "IT-Dienstleistungen & Beratung", "Maschinenbau", "Einzelhandel".
+
+#### list_software
+
+Listet alle erkannten Software-/CMS-Namen auf. Nutze diese Namen als Filter in `search_companies`.
+
+**Parameter:** Keine
+
+**Antwort:** JSON-Array mit Strings. Beispiele: "WordPress", "Shopware", "TYPO3", "Magento", "Joomla", "WooCommerce".
+
+#### list_tools
+
+Listet alle erkannten Web-Tool-Namen auf. Nutze diese Namen als Filter in `search_companies`.
+
+**Parameter:** Keine
+
+**Antwort:** JSON-Array mit Strings. Beispiele: "Google Analytics", "Google Fonts", "Cloudflare", "Matomo", "Facebook Pixel".
+
+## Anwendungsbeispiele
+
+### Beispiel 1: IT-Dienstleister in Dresden finden
+
+```
+1. list_sectors → Finde die ID für "IT-Dienstleistungen & Beratung"
+2. search_companies(postalCode: "01067", radiusKm: 30, sectorIds: [<ID>])
+3. get_company_details(<company_id>) für Details
+```
+
+### Beispiel 2: WordPress-Shops ohne Consent-Manager
+
+```
+1. search_companies(softwareNames: ["WordPress", "WooCommerce"], consentManagerFound: false)
+```
+
+### Beispiel 3: Unternehmen mit langsamen Websites
+
+```
+1. search_companies(ttfbCategory: "slow", hasWebsite: true)
+```
+
+## Preise
+
+Besuche die [Preisseite](https://www.company-osint.com/de/preise) für aktuelle Informationen zu den verfügbaren Paketen.
+
+## Kontakt
+
+- **Website:** [https://www.company-osint.com](https://www.company-osint.com)
+- **E-Mail:** info@company-osint.com
+- **Kontaktformular:** [https://www.company-osint.com/de/kontakt](https://www.company-osint.com/de/kontakt)
+
+## Rechtliches
+
+- [Impressum](https://www.company-osint.com/de/impressum)
+- [Datenschutzerklärung](https://www.company-osint.com/de/datenschutz)
+- [AGB](https://www.company-osint.com/de/agb)

@@ -108,7 +108,10 @@ app.Use(async (context, next) =>
 {
     if (context.Request.Path.StartsWithSegments("/api") ||
         context.Request.Path.StartsWithSegments("/swagger") ||
-        context.Request.Path.StartsWithSegments("/mcp"))
+        context.Request.Path.StartsWithSegments("/mcp") ||
+        context.Request.Path.Equals("/de/impressum") ||
+        context.Request.Path.Equals("/de/agb") ||
+        context.Request.Path.Equals("/de/datenschutz"))
     {
         context.Response.Headers["X-Robots-Tag"] = "noindex, nofollow";
     }
