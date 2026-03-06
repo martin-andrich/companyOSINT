@@ -123,12 +123,21 @@
 
         if (result.Succeeded)
         {
-            var token = await UserManager.GenerateEmailConfirmationTokenAsync(user);
-            var code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(token));
-            var confirmationLink = Navigation.ToAbsoluteUri(
-                $"/de/email-bestaetigen?userId={user.Id}&code={code}").AbsoluteUri;
+            try
+            {
+                var token = await UserManager.GenerateEmailConfirmationTokenAsync(user);
+                var code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(token));
+                var confirmationLink = Navigation.ToAbsoluteUri(
+                    $"/de/email-bestaetigen?userId={user.Id}&code={code}").AbsoluteUri;
 
-            await EmailSender.SendConfirmationLinkAsync(user, Input.Email, confirmationLink);
+                await EmailSender.SendConfirmationLinkAsync(user, Input.Email, confirmationLink);
+            }
+            catch
+            {
+                // E-Mail-Versand fehlgeschlagen — wird bereits in GraphEmailSender geloggt.
+                // Registrierung trotzdem abschließen.
+            }
+
             Navigation.NavigateTo("/de/registrierung-bestaetigung", forceLoad: true);
             return;
         }
