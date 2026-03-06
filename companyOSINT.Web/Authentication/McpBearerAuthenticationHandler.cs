@@ -25,7 +25,7 @@ public class McpBearerAuthenticationHandler(
             return AuthenticateResult.NoResult();
 
         var plainToken = headerValue["Bearer ".Length..].Trim();
-        if (string.IsNullOrEmpty(plainToken) || !plainToken.StartsWith("fac_"))
+        if (string.IsNullOrEmpty(plainToken) || !plainToken.StartsWith("co_"))
             return AuthenticateResult.Fail("Invalid token format.");
 
         var token = await apiTokenService.ValidateTokenAsync(plainToken, Context.RequestAborted);

@@ -69,7 +69,7 @@ public class ApiTokenService(IApplicationDbContext db) : IApiTokenService
     private static string GenerateToken()
     {
         var bytes = RandomNumberGenerator.GetBytes(32);
-        return $"fac_{Convert.ToBase64String(bytes).Replace("+", "-").Replace("/", "_").TrimEnd('=')}";
+        return $"co_{Convert.ToBase64String(bytes).Replace("+", "-").Replace("/", "_").TrimEnd('=')}";
     }
 
     private static string HashToken(string token)

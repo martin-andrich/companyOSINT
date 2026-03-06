@@ -1,24 +1,11 @@
 services:
-  postgres:
-    image: postgres:latest
-    environment:
-      POSTGRES_DB: companyOSINT
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-    ports:
-      - "5432:5432"
-    volumes:
-      - pgdata:/var/lib/postgresql
-
   companyosint-web:
     build:
       context: .
       dockerfile: companyOSINT.Web/Dockerfile
-    depends_on:
-      - postgres
     environment:
       ASPNETCORE_HTTP_PORTS: "8445"
-      ConnectionStrings__DefaultConnection: "Host=postgres;Database=companyOSINT;Username=postgres;Password=postgres"
+      ConnectionStrings__DefaultConnection: "${CONNECTION_STRING:-Host=host.docker.internal;Database=companyOSINT;Username=postgres;Password=postgres}"
       ApiKey: "${API_KEY}"
 
   companyosint-worker:
@@ -33,6 +20,3 @@ services:
       OllamaUrl: "http://192.168.12.117:11434/v1/"
       OllamaModel: "qwen3.5:27b"
       SerperApiKey: "${SERPER_API_KEY}"
-
-volumes:
-  pgdata:
