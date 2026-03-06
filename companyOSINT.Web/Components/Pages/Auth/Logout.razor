@@ -5,9 +5,18 @@
 @inject NavigationManager Navigation
 
 @code {
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
+
+    [SupplyParameterFromForm]
+    private bool LogoutSubmitted { get; set; }
+
     protected override async Task OnInitializedAsync()
     {
-        await SignInManager.SignOutAsync();
-        Navigation.NavigateTo("/de/", forceLoad: true);
+        if (HttpMethods.IsPost(HttpContext.Request.Method))
+        {
+            await SignInManager.SignOutAsync();
+            Navigation.NavigateTo("/de/", forceLoad: true);
+        }
     }
 }

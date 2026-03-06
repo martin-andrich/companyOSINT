@@ -1,9 +1,10 @@
-using MailKit.Net.Smtp;
-using MailKit.Security;
+using Azure.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using MimeKit;
+using Microsoft.Graph;
+using Microsoft.Graph.Models;
+using Microsoft.Graph.Users.Item.SendMail;
 
 namespace companyOSINT.Infrastructure.Email;
 
@@ -13,11 +14,11 @@ public interface IContactEmailService
 }
 
 public class ContactEmailService(
-    IOptions<SmtpSettings> smtpOptions,
+    IOptions<GraphEmailSettings> graphOptions,
     IConfiguration configuration,
     ILogger<ContactEmailService> logger) : IContactEmailService
 {
-    private readonly SmtpSettings _smtp = smtpOptions.Value;
+    private readonly GraphEmailSettings _graph = graphOptions.Value;
 
     public async Task SendContactEmailAsync(string name, string email, string message)
     {
@@ -44,29 +45,60 @@ public class ContactEmailService(
             </div>
             """;
 
-        var mimeMessage = new MimeMessage();
-        mimeMessage.From.Add(new MailboxAddress(_smtp.SenderName, _smtp.SenderEmail));
-        mimeMessage.To.Add(MailboxAddress.Parse(recipientEmail));
-        mimeMessage.ReplyTo.Add(new MailboxAddress(name, email));
-        mimeMessage.Subject = subject;
-        mimeMessage.Body = new TextPart("html") { Text = body };
-
-        using var client = new SmtpClient();
-
         try
         {
-            await client.ConnectAsync(_smtp.Host, _smtp.Port, SecureSocketOptions.StartTls);
-            await client.AuthenticateAsync(_smtp.UserName, _smtp.Password);
-            await client.SendAsync(mimeMessage);
+            var credential = new ClientSecretCredential(
+                _graph.TenantId, _graph.ClientId, _graph.ClientSecret);
+
+            var graphClient = new GraphServiceClient(credential);
+
+            var graphMessage = new Message
+            {
+                Subject = subject,
+                Body = new ItemBody
+                {
+                    ContentType = BodyType.Html,
+                    Content = body
+                },
+                ToRecipients =
+                [
+                    new Recipient
+                    {
+                        EmailAddress = new EmailAddress { Address = recipientEmail }
+                    }
+                ],
+                From = new Recipient
+                {
+                    EmailAddress = new EmailAddress
+                    {
+                        Address = _graph.SenderEmail,
+                        Name = _graph.SenderName
+                    }
+                },
+                ReplyTo =
+                [
+                    new Recipient
+                    {
+                        EmailAddress = new EmailAddress
+                        {
+                            Address = email,
+                            Name = name
+                        }
+                    }
+                ]
+            };
+
+            await graphClient.Users[_graph.SenderEmail].SendMail
+                .PostAsync(new SendMailPostRequestBody
+                {
+                    Message = graphMessage,
+                    SaveToSentItems = false
+                });
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Fehler beim Senden der Kontakt-E-Mail von {Email}", email);
             throw;
-        }
-        finally
-        {
-            await client.DisconnectAsync(true);
         }
     }
 }

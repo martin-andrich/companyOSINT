@@ -9,7 +9,10 @@ Users can register and log in. Through their account, they can filter the databa
 An MCP server is provided for AI agents, which they can use to filter and purchase records themselves.
 The website layout is in a modern SaaS style.
 
-Translated with DeepL.com (free version)
+Users without an active subscription can search for companies, but can only see their name and address, without any further metadata.
+The web subscription costs EUR 49 per month and allows full web search including all metadata.
+The MCP subscription costs EUR 99 per month and allows web search and MCP use including all metadata.
+Subscriptions are automatically renewed for one month unless canceled. Cancellation is possible at any time without notice.
 
 ## Build & Run Commands
 
@@ -405,7 +408,7 @@ Uses headless Chromium (PuppeteerSharp) to detect consent managers and track thi
 | `DetectAll` | HTML + headers + URL → `DetectionResult` (software list, tools list). Two-pass, first-match-wins. |
 
 **Configuration (env vars / `.env` file):**
-- `ApiBaseUrl` — Web API URL (default: `https://company.martin-andrich.de`, Docker: `http://companyOSINT.web:8445`)
+- `ApiBaseUrl` — Web API URL (default: `https://www.company-osint.com`, Docker: `http://companyOSINT.web:8445`)
 - `ApiKey` — API key for authenticating with the Web API (required, passed as `X-API-Key` header)
 - `OllamaUrl` — Ollama endpoint (default: `http://192.168.12.117:11434/v1/`, 5min timeout)
 - `OllamaModel` — Ollama model (default: `gpt-oss:20b`)

@@ -35,8 +35,8 @@ public static class DependencyInjection
         .AddEntityFrameworkStores<ApplicationDbContext>()
         .AddDefaultTokenProviders();
 
-        services.Configure<SmtpSettings>(configuration.GetSection("Smtp"));
-        services.AddTransient<IEmailSender<ApplicationUser>, SmtpEmailSender>();
+        services.Configure<GraphEmailSettings>(configuration.GetSection("GraphEmail"));
+        services.AddTransient<IEmailSender<ApplicationUser>, GraphEmailSender>();
         services.AddTransient<IContactEmailService, ContactEmailService>();
 
         services.Configure<TurnstileSettings>(configuration.GetSection("Turnstile"));

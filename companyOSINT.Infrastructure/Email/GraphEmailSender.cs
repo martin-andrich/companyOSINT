@@ -1,17 +1,18 @@
+using Azure.Identity;
 using companyOSINT.Infrastructure.Identity;
-using MailKit.Net.Smtp;
-using MailKit.Security;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using MimeKit;
+using Microsoft.Graph;
+using Microsoft.Graph.Models;
+using Microsoft.Graph.Users.Item.SendMail;
 
 namespace companyOSINT.Infrastructure.Email;
 
-public class SmtpEmailSender(IOptions<SmtpSettings> options, ILogger<SmtpEmailSender> logger)
+public class GraphEmailSender(IOptions<GraphEmailSettings> options, ILogger<GraphEmailSender> logger)
     : IEmailSender<ApplicationUser>
 {
-    private readonly SmtpSettings _settings = options.Value;
+    private readonly GraphEmailSettings _settings = options.Value;
 
     public async Task SendConfirmationLinkAsync(ApplicationUser user, string email, string confirmationLink)
     {
@@ -70,29 +71,49 @@ public class SmtpEmailSender(IOptions<SmtpSettings> options, ILogger<SmtpEmailSe
 
     private async Task SendEmailAsync(string toEmail, string subject, string htmlBody)
     {
-        var message = new MimeMessage();
-        message.From.Add(new MailboxAddress(_settings.SenderName, _settings.SenderEmail));
-        message.To.Add(MailboxAddress.Parse(toEmail));
-        message.Subject = subject;
-
-        message.Body = new TextPart("html") { Text = htmlBody };
-
-        using var client = new SmtpClient();
-
         try
         {
-            await client.ConnectAsync(_settings.Host, _settings.Port, SecureSocketOptions.StartTls);
-            await client.AuthenticateAsync(_settings.UserName, _settings.Password);
-            await client.SendAsync(message);
+            var credential = new ClientSecretCredential(
+                _settings.TenantId, _settings.ClientId, _settings.ClientSecret);
+
+            var graphClient = new GraphServiceClient(credential);
+
+            var message = new Message
+            {
+                Subject = subject,
+                Body = new ItemBody
+                {
+                    ContentType = BodyType.Html,
+                    Content = htmlBody
+                },
+                ToRecipients =
+                [
+                    new Recipient
+                    {
+                        EmailAddress = new EmailAddress { Address = toEmail }
+                    }
+                ],
+                From = new Recipient
+                {
+                    EmailAddress = new EmailAddress
+                    {
+                        Address = _settings.SenderEmail,
+                        Name = _settings.SenderName
+                    }
+                }
+            };
+
+            await graphClient.Users[_settings.SenderEmail].SendMail
+                .PostAsync(new SendMailPostRequestBody
+                {
+                    Message = message,
+                    SaveToSentItems = false
+                });
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Fehler beim Senden der E-Mail an {Email}", toEmail);
             throw;
-        }
-        finally
-        {
-            await client.DisconnectAsync(true);
         }
     }
 }
