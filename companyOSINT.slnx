@@ -1,6 +1,7 @@
 <Solution>
   <Folder Name="/Solution Items/">
     <File Path=".env" />
+    <File Path=".env.example" />
     <File Path="CLAUDE.md" />
     <File Path="compose.prod.yaml" />
     <File Path="compose.yaml" />

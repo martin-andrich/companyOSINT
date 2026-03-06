@@ -9,20 +9,90 @@
 - Docker & Docker Compose
 - Git
 - Nginx (als Reverse Proxy)
+- PostgreSQL (nativ auf dem Server installiert)
 - Die Datei `handelsregister.db` (wird für den Import benötigt)
 
-### 1. Repository klonen & `.env` anlegen
+### 1. PostgreSQL einrichten
+
+PostgreSQL muss nativ auf dem Server installiert sein. Die Docker-Container greifen über `host.docker.internal` auf den Host-Postgres zu.
+
+#### Datenbank und Benutzer anlegen
+
+```bash
+sudo -u postgres psql
+```
+
+```sql
+CREATE DATABASE "companyOSINT";
+-- Optional: eigenen Benutzer anlegen
+CREATE USER companyosint WITH PASSWORD 'sicheres-passwort';
+GRANT ALL PRIVILEGES ON DATABASE "companyOSINT" TO companyosint;
+\c "companyOSINT"
+GRANT ALL ON SCHEMA public TO companyosint;
+```
+
+#### `postgresql.conf` anpassen
+
+PostgreSQL hört standardmäßig nur auf `localhost`. Damit Docker-Container zugreifen können, muss die Docker-Bridge-IP ergänzt werden.
+
+```bash
+sudo nano /etc/postgresql/*/main/postgresql.conf
+```
+
+Zeile `listen_addresses` anpassen:
+
+```
+listen_addresses = 'localhost,172.17.0.1'
+```
+
+`172.17.0.1` ist die Standard-Gateway-IP des Docker-Bridge-Netzwerks. Alternativ `'*'` für alle Interfaces.
+
+#### `pg_hba.conf` anpassen
+
+Docker-Containern den Zugriff auf die Datenbank erlauben:
+
+```bash
+sudo nano /etc/postgresql/*/main/pg_hba.conf
+```
+
+Folgende Zeile am Ende hinzufügen:
+
+```
+# Docker-Container
+host    companyOSINT    all    172.16.0.0/12    scram-sha-256
+```
+
+Das Subnetz `172.16.0.0/12` deckt alle möglichen Docker-Bridge-Netze ab (`172.16.x.x` – `172.31.x.x`).
+
+#### PostgreSQL neu starten
+
+```bash
+sudo systemctl restart postgresql
+```
+
+#### Verbindung testen
+
+```bash
+# Vom Host aus:
+psql -h 172.17.0.1 -U postgres -d companyOSINT
+
+# Aus einem Docker-Container:
+docker run --rm --add-host=host.docker.internal:host-gateway postgres:latest \
+  psql -h host.docker.internal -U postgres -d companyOSINT -c "SELECT 1"
+```
+
+### 2. Repository klonen & `.env` anlegen
 
 ```bash
 git clone <repo-url> companyOSINT
 cd companyOSINT
 cp .env.example .env
 # Dann .env bearbeiten und sichere Werte eintragen:
-#   POSTGRES_PASSWORD=...
+#   CONNECTION_STRING=Host=host.docker.internal;Database=companyOSINT;Username=postgres;Password=...
 #   API_KEY=...
 ```
 
-### 2. Starten
+### 3. Starten
 
 ```bash
 docker compose -f compose.prod.yaml up -d --build --remove-orphans
@@ -37,7 +107,7 @@ Der Import liest die SQLite-Datei `handelsregister.db` und schreibt die Daten na
 
 ```bash
 # handelsregister.db ins Projektverzeichnis kopieren, dann:
-docker compose -f compose.prod.yaml --profile import run --rm --build --remove-orphans findACompany-import
+docker compose -f compose.prod.yaml --profile import run --rm --build --remove-orphans companyosint-import
 docker image prune -f
 ```
 
@@ -48,14 +118,14 @@ Der Import-Container startet, verarbeitet die Daten und beendet sich automatisch
 Der Worker (Company Enrichment) läuft nicht standardmäßig mit und muss bei Bedarf separat gestartet werden:
 
 ```bash
-docker compose -f compose.prod.yaml --profile worker up -d --build findACompany-worker
+docker compose -f compose.prod.yaml --profile worker up -d --build companyosint-worker
 docker image prune -f
 ```
 
 Stoppen:
 
 ```bash
-docker compose -f compose.prod.yaml --profile worker stop findACompany-worker
+docker compose -f compose.prod.yaml --profile worker stop companyosint-worker
 ```
 
 ## Projekt aktualisieren
@@ -67,7 +137,7 @@ docker compose -f compose.prod.yaml up -d --build --remove-orphans
 docker image prune -f
 ```
 
-Docker baut nur die Container neu, bei denen sich etwas geändert hat. Die PostgreSQL-Daten bleiben im Volume erhalten.
+Docker baut nur die Container neu, bei denen sich etwas geändert hat. Die PostgreSQL-Daten liegen auf dem Host und sind davon nicht betroffen.
 
 ## API-Authentifizierung
 
@@ -121,17 +191,15 @@ dotnet ef database update --project companyOSINT.Web --startup-project companyOS
 ### Backup erstellen
 
 ```bash
-docker compose -f compose.prod.yaml exec postgres pg_dump -U postgres companyOSINT > backup_$(date +%Y%m%d_%H%M%S).sql
+pg_dump -U postgres companyOSINT > backup_$(date +%Y%m%d_%H%M%S).sql
 ```
-
-Die Datei (z.B. `backup_20260220_143000.sql`) wird im aktuellen Verzeichnis abgelegt.
 
 ### Backup wiederherstellen
 
 ```bash
 # Bestehende Datenbank leeren und Backup einspielen:
-docker compose -f compose.prod.yaml exec -T postgres psql -U postgres -d companyOSINT -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"
-docker compose -f compose.prod.yaml exec -T postgres psql -U postgres -d companyOSINT < backup_20260220_143000.sql
+psql -U postgres -d companyOSINT -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"
+psql -U postgres -d companyOSINT < backup_20260220_143000.sql
 ```
 
 ## Logs & Stoppen
@@ -139,8 +207,7 @@ docker compose -f compose.prod.yaml exec -T postgres psql -U postgres -d company
 | Aktion                      | Befehl                                                      |
 |-----------------------------|-------------------------------------------------------------|
 | Alle Logs ansehen           | `docker compose -f compose.prod.yaml logs -f`               |
-| Nur Web-Logs                | `docker compose -f compose.prod.yaml logs -f findACompany-web` |
-| Nur DB-Logs                 | `docker compose -f compose.prod.yaml logs -f postgres`      |
+| Nur Web-Logs                | `docker compose -f compose.prod.yaml logs -f companyosint-web` |
 | Projekt stoppen             | `docker compose -f compose.prod.yaml down`                  |
 | Neu bauen & starten         | `docker compose -f compose.prod.yaml up -d --build`         |
 | Status der Container        | `docker compose -f compose.prod.yaml ps`                    |
