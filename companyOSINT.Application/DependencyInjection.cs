@@ -15,6 +15,7 @@ public static class DependencyInjection
         services.AddScoped<IUserProjectService, UserProjectService>();
         services.AddScoped<IApiTokenService, ApiTokenService>();
         services.AddSingleton<IPostalCodeService, PostalCodeService>();
+        services.AddScoped<IStatsService, StatsService>();
 
         return services;
     }

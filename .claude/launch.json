@@ -5,8 +5,7 @@
       "name": "web-api",
       "runtimeExecutable": "dotnet",
       "runtimeArgs": ["run", "--project", "companyOSINT.Web"],
-      "port": 8085,
-      "autoPort": true
+      "port": 8085
     },
     {
       "name": "worker",
