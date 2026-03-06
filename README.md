@@ -59,7 +59,7 @@ Folgende Zeile am Ende hinzufügen:
 
 ```
 # Docker-Container
-host    companyOSINT    all    172.16.0.0/12    scram-sha-256
+host    all    all    172.16.0.0/12    scram-sha-256
 ```
 
 Das Subnetz `172.16.0.0/12` deckt alle möglichen Docker-Bridge-Netze ab (`172.16.x.x` – `172.31.x.x`).
