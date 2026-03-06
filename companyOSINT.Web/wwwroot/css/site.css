@@ -771,19 +771,19 @@ h2 { font-size: 2.25rem; }
 }
 
 .process-step:nth-child(1) .process-step-number {
-    background: linear-gradient(135deg, rgba(26,86,219,0.1), rgba(26,86,219,0.05));
+    background: linear-gradient(135deg, rgba(26,86,219,0.1), rgba(26,86,219,0.05)), var(--fac-bg-light);
     color: var(--fac-primary);
     border-color: rgba(26,86,219,0.15);
 }
 
 .process-step:nth-child(2) .process-step-number {
-    background: linear-gradient(135deg, rgba(124,58,237,0.1), rgba(124,58,237,0.05));
+    background: linear-gradient(135deg, rgba(124,58,237,0.1), rgba(124,58,237,0.05)), var(--fac-bg-light);
     color: var(--fac-secondary);
     border-color: rgba(124,58,237,0.15);
 }
 
 .process-step:nth-child(3) .process-step-number {
-    background: linear-gradient(135deg, rgba(6,182,212,0.1), rgba(6,182,212,0.05));
+    background: linear-gradient(135deg, rgba(6,182,212,0.1), rgba(6,182,212,0.05)), var(--fac-bg-light);
     color: var(--fac-accent);
     border-color: rgba(6,182,212,0.15);
 }
