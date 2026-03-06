@@ -1,0 +1,292 @@
+@page "/de/dashboard/projekte"
+@layout DashboardLayout
+@rendermode RenderMode.InteractiveServer
+@attribute [Authorize]
+@using companyOSINT.Application.Interfaces
+@using companyOSINT.Domain.Dtos.Projects
+@using companyOSINT.Domain.Entities
+@using companyOSINT.Domain.Enums
+@using companyOSINT.Infrastructure.Identity
+@using Microsoft.AspNetCore.Identity
+@inject IUserProjectService ProjectService
+@inject UserManager<ApplicationUser> UserManager
+@inject AuthenticationStateProvider AuthStateProvider
+
+<PageTitle>Projekte - company-OSINT.com</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">Projekte</h1>
+    <button class="btn btn-primary btn-sm" @onclick="() => showCreateForm = !showCreateForm">
+        <i class="bi bi-plus-lg me-1"></i>Neues Projekt
+    </button>
+</div>
+
+@* Projekt erstellen *@
+@if (showCreateForm)
+{
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <div class="input-group">
+                <input type="text" class="form-control" placeholder="Projektname"
+                       @bind="newProjectName" @bind:event="oninput"
+                       @onkeydown="OnCreateKeyDown" />
+                <button class="btn btn-primary" @onclick="CreateProjectAsync"
+                        disabled="@string.IsNullOrWhiteSpace(newProjectName)">
+                    <i class="bi bi-check-lg me-1"></i>Erstellen
+                </button>
+                <button class="btn btn-outline-secondary" @onclick="CancelCreate">
+                    Abbrechen
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@* Projektauswahl *@
+@if (projects.Count > 0)
+{
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body p-3">
+            <div class="d-flex align-items-center gap-3">
+                <label class="form-label mb-0 fw-semibold text-nowrap">
+                    <i class="bi bi-folder me-1"></i>Projekt:
+                </label>
+                <select class="form-select" style="max-width: 300px;"
+                        value="@selectedProjectId"
+                        @onchange="OnProjectSelected">
+                    <option value="">Projekt auswählen...</option>
+                    @foreach (var project in projects)
+                    {
+                        <option value="@project.Id">@project.Name</option>
+                    }
+                </select>
+                @if (selectedProjectId is not null)
+                {
+                    <button class="btn btn-outline-danger btn-sm"
+                            @onclick="ConfirmDeleteProject"
+                            title="Projekt löschen">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+@* Löschbestätigung *@
+@if (showDeleteConfirm)
+{
+    <div class="alert alert-danger d-flex align-items-center justify-content-between mb-4">
+        <span>
+            <i class="bi bi-exclamation-triangle me-2"></i>Projekt wirklich löschen? Alle zugeordneten Firmen werden entfernt.
+        </span>
+        <div>
+            <button class="btn btn-danger btn-sm me-2" @onclick="DeleteProjectAsync">Löschen</button>
+            <button class="btn btn-outline-secondary btn-sm" @onclick="() => showDeleteConfirm = false">Abbrechen</button>
+        </div>
+    </div>
+}
+
+@* Firmentabelle *@
+@if (selectedProjectId is not null)
+{
+    @if (isLoading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Laden...</span>
+            </div>
+        </div>
+    }
+    else if (companies.Count > 0)
+    {
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th class="border-bottom-2">Firmenname</th>
+                        <th class="border-bottom-2">Anschrift</th>
+                        <th class="border-bottom-2">Website</th>
+                        <th class="border-bottom-2">Status</th>
+                        <th class="border-bottom-2"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var company in companies)
+                    {
+                        <tr>
+                            <td class="fw-medium">@company.CompanyName</td>
+                            <td class="text-muted">@company.RegisteredAddress</td>
+                            <td>
+                                @if (!string.IsNullOrWhiteSpace(company.Website))
+                                {
+                                    <a href="@company.Website" target="_blank"
+                                       rel="noopener noreferrer" class="text-decoration-none">
+                                        @(new Uri(company.Website).Host)
+                                    </a>
+                                }
+                            </td>
+                            <td>
+                                <select class="form-select form-select-sm" style="width: auto; min-width: 160px;"
+                                        value="@((int)company.Status)"
+                                        @onchange="e => UpdateStatusAsync(company.Id, (ProjectCompanyStatus)int.Parse(e.Value!.ToString()!))">
+                                    @foreach (var status in Enum.GetValues<ProjectCompanyStatus>())
+                                    {
+                                        <option value="@((int)status)">@GetStatusLabel(status)</option>
+                                    }
+                                </select>
+                            </td>
+                            <td>
+                                <button class="btn btn-outline-danger btn-sm"
+                                        @onclick="() => RemoveCompanyAsync(company.Id)"
+                                        title="Aus Projekt entfernen">
+                                    <i class="bi bi-x-lg"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    else
+    {
+        <div class="text-center py-5 text-muted">
+            <i class="bi bi-folder2-open fs-1 d-block mb-3"></i>
+            <p class="mb-1">Dieses Projekt enthält noch keine Unternehmen.</p>
+            <small>Fügen Sie Unternehmen über die <a href="/de/dashboard/suche">Suche</a> hinzu.</small>
+        </div>
+    }
+}
+else if (projects.Count == 0 && !showCreateForm)
+{
+    <div class="card border-0 shadow-sm">
+        <div class="card-body text-center py-5">
+            <i class="bi bi-folder-plus fs-1 text-muted mb-3 d-block"></i>
+            <h5>Noch keine Projekte</h5>
+            <p class="text-muted mb-3">
+                Erstellen Sie Ihr erstes Projekt, um Unternehmen zu organisieren.
+            </p>
+            <button class="btn btn-primary" @onclick="() => showCreateForm = true">
+                <i class="bi bi-plus-lg me-1"></i>Neues Projekt erstellen
+            </button>
+        </div>
+    </div>
+}
+
+@code {
+    private Guid userId;
+    private List<UserProject> projects = [];
+    private Guid? selectedProjectId;
+    private List<ProjectCompanyDto> companies = [];
+    private bool isLoading;
+    private string newProjectName = "";
+    private bool showCreateForm;
+    private bool showDeleteConfirm;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = await UserManager.GetUserAsync(authState.User);
+        if (user is null) return;
+        userId = user.Id;
+
+        projects = await ProjectService.GetProjectsByUserAsync(userId);
+    }
+
+    private async Task OnProjectSelected(ChangeEventArgs e)
+    {
+        var val = e.Value?.ToString();
+        if (string.IsNullOrEmpty(val) || !Guid.TryParse(val, out var id))
+        {
+            selectedProjectId = null;
+            companies = [];
+            return;
+        }
+
+        selectedProjectId = id;
+        showDeleteConfirm = false;
+        await LoadCompaniesAsync();
+    }
+
+    private async Task LoadCompaniesAsync()
+    {
+        if (selectedProjectId is null) return;
+        isLoading = true;
+        StateHasChanged();
+
+        companies = await ProjectService.GetProjectCompaniesAsync(selectedProjectId.Value, userId);
+
+        isLoading = false;
+        StateHasChanged();
+    }
+
+    private async Task OnCreateKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+            await CreateProjectAsync();
+    }
+
+    private async Task CreateProjectAsync()
+    {
+        if (string.IsNullOrWhiteSpace(newProjectName)) return;
+
+        var project = await ProjectService.CreateAsync(userId,
+            new UserProjectCreateDto { Name = newProjectName.Trim() });
+
+        newProjectName = "";
+        showCreateForm = false;
+
+        projects = await ProjectService.GetProjectsByUserAsync(userId);
+        selectedProjectId = project.Id;
+        await LoadCompaniesAsync();
+    }
+
+    private void CancelCreate()
+    {
+        showCreateForm = false;
+        newProjectName = "";
+    }
+
+    private void ConfirmDeleteProject()
+    {
+        showDeleteConfirm = true;
+    }
+
+    private async Task DeleteProjectAsync()
+    {
+        if (selectedProjectId is null) return;
+
+        await ProjectService.DeleteAsync(selectedProjectId.Value, userId);
+        selectedProjectId = null;
+        companies = [];
+        showDeleteConfirm = false;
+
+        projects = await ProjectService.GetProjectsByUserAsync(userId);
+    }
+
+    private async Task UpdateStatusAsync(Guid entryId, ProjectCompanyStatus newStatus)
+    {
+        await ProjectService.UpdateCompanyStatusAsync(entryId, userId,
+            new UpdateCompanyStatusDto { Status = newStatus });
+        await LoadCompaniesAsync();
+    }
+
+    private async Task RemoveCompanyAsync(Guid entryId)
+    {
+        await ProjectService.RemoveCompanyAsync(entryId, userId);
+        await LoadCompaniesAsync();
+    }
+
+    private static string GetStatusLabel(ProjectCompanyStatus status) => status switch
+    {
+        ProjectCompanyStatus.Unbekannt => "Unbekannt",
+        ProjectCompanyStatus.Neu => "Neu",
+        ProjectCompanyStatus.Erstkontakt => "Erstkontakt",
+        ProjectCompanyStatus.ImGespräch => "Im Gespräch",
+        ProjectCompanyStatus.AngebotVersendet => "Angebot versendet",
+        ProjectCompanyStatus.AuftragLäuft => "Auftrag läuft",
+        ProjectCompanyStatus.AuftragAbgeschlossen => "Auftrag abgeschlossen",
+        _ => status.ToString()
+    };
+}

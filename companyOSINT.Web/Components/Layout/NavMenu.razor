@@ -1,0 +1,86 @@
+@inject NavigationManager Nav
+
+<nav class="navbar navbar-expand-lg sticky-top">
+    <div class="@NavContainerClass">
+        <a class="navbar-brand" href="/de/">
+            <svg class="brand-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 56" fill="none" aria-label="CompanyOSINT">
+              <defs>
+                <linearGradient id="logoGrad" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stop-color="#4f46e5"/>
+                  <stop offset="100%" stop-color="#06b6d4"/>
+                </linearGradient>
+              </defs>
+              <g transform="translate(4, 4)">
+                <circle cx="20" cy="20" r="16" stroke="url(#logoGrad)" stroke-width="3.5" fill="none"/>
+                <line x1="32" y1="32" x2="44" y2="44" stroke="url(#logoGrad)" stroke-width="3.5" stroke-linecap="round"/>
+                <circle cx="14" cy="16" r="2.5" fill="#4f46e5"/>
+                <circle cx="26" cy="14" r="2.5" fill="#6366f1"/>
+                <circle cx="20" cy="25" r="2.5" fill="#06b6d4"/>
+                <line x1="14" y1="16" x2="26" y2="14" stroke="#4f46e5" stroke-width="1.4" opacity="0.5"/>
+                <line x1="14" y1="16" x2="20" y2="25" stroke="#6366f1" stroke-width="1.4" opacity="0.5"/>
+                <line x1="26" y1="14" x2="20" y2="25" stroke="#06b6d4" stroke-width="1.4" opacity="0.5"/>
+              </g>
+              <text x="58" y="38" font-family="Inter, system-ui, -apple-system, sans-serif" font-size="30" font-weight="700" letter-spacing="-0.5"><tspan fill="currentColor">Company</tspan><tspan fill="url(#logoGrad)">OSINT</tspan></text>
+            </svg>
+        </a>
+        <button class="navbar-toggler" type="button"
+                data-bs-toggle="collapse" data-bs-target="#navbarMain"
+                aria-controls="navbarMain" aria-expanded="false" aria-label="Navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarMain">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <li class="nav-item">
+                    <NavLink class="nav-link" href="/de/" Match="NavLinkMatch.All">
+                        Startseite
+                    </NavLink>
+                </li>
+                <li class="nav-item">
+                    <NavLink class="nav-link" href="/de/Demo">
+                        Demo
+                    </NavLink>
+                </li>
+                <li class="nav-item">
+                    <NavLink class="nav-link" href="/de/mcp-server">
+                        MCP-Server
+                    </NavLink>
+                </li>
+                <li class="nav-item">
+                    <NavLink class="nav-link" href="/de/faq">
+                        FAQ
+                    </NavLink>
+                </li>
+                <li class="nav-item">
+                    <NavLink class="nav-link" href="/de/kontakt">
+                        Kontakt
+                    </NavLink>
+                </li>
+            </ul>
+            <div class="d-flex gap-2 align-items-center">
+                <button class="btn-theme-toggle" onclick="toggleTheme()" title="Theme wechseln" type="button">
+                    <i id="theme-toggle-icon" class="bi bi-moon-fill"></i>
+                </button>
+                <AuthorizeView>
+                    <Authorized>
+                        <a href="/de/dashboard" class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-speedometer2 me-1"></i> Dashboard
+                        </a>
+                        <span class="text-muted small d-none d-lg-inline">@context.User.Identity?.Name</span>
+                        <a href="/de/abmelden" class="btn btn-outline-secondary btn-sm">Abmelden</a>
+                    </Authorized>
+                    <NotAuthorized>
+                        <a href="/de/anmelden" class="btn btn-outline-primary btn-sm">Anmelden</a>
+                        <a href="/de/registrieren" class="btn btn-primary btn-sm">Kostenlos testen</a>
+                    </NotAuthorized>
+                </AuthorizeView>
+            </div>
+        </div>
+    </div>
+</nav>
+
+@code {
+    private string NavContainerClass =>
+        Nav.Uri.Contains("/dashboard", StringComparison.OrdinalIgnoreCase)
+            ? "container-fluid"
+            : "container";
+}

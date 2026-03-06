@@ -1,0 +1,97 @@
+@page "/de/zwei-faktor"
+@using companyOSINT.Infrastructure.Identity
+@using Microsoft.AspNetCore.Identity
+@inject SignInManager<ApplicationUser> SignInManager
+@inject NavigationManager Navigation
+
+<PageTitle>Zwei-Faktor-Authentifizierung - company-OSINT.com</PageTitle>
+
+<section class="content-page">
+    <div class="container">
+        <div class="text-center mb-4">
+            <h1 class="h3">Zwei-Faktor-Authentifizierung</h1>
+            <p class="text-muted">Geben Sie den Code aus Ihrer Authenticator-App ein.</p>
+        </div>
+
+        <div class="auth-card">
+            @if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <div class="alert alert-danger" role="alert">
+                    <i class="bi bi-exclamation-triangle me-1"></i> @errorMessage
+                </div>
+            }
+
+            <form method="post" @formname="two-factor" @onsubmit="OnSubmitAsync">
+                <AntiforgeryToken />
+                <div class="mb-3">
+                    <label for="code" class="form-label">Authenticator-Code</label>
+                    <input type="text" class="form-control text-center fs-4" id="code"
+                           style="letter-spacing: 0.3em;"
+                           name="Input.Code" @bind="Input.Code" required
+                           autocomplete="one-time-code" inputmode="numeric" maxlength="6"
+                           placeholder="000000" />
+                </div>
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" id="rememberClient"
+                           name="Input.RememberClient" @bind="Input.RememberClient" />
+                    <label class="form-check-label small" for="rememberClient">
+                        Dieses Gerät merken
+                    </label>
+                </div>
+                <button type="submit" class="btn btn-primary w-100">
+                    Bestätigen
+                </button>
+            </form>
+            <hr class="my-4" />
+            <p class="text-center small mb-0">
+                Keinen Zugriff auf Ihre Authenticator-App?
+                <a href="/de/recovery-code" class="text-decoration-none">Recovery-Code verwenden</a>
+            </p>
+        </div>
+    </div>
+</section>
+
+@code {
+    private TwoFactorInput _input = new();
+
+    [SupplyParameterFromForm]
+    private TwoFactorInput Input { get => _input; set => _input = value ?? new(); }
+
+    [SupplyParameterFromQuery]
+    private bool RememberMe { get; set; }
+
+    [SupplyParameterFromQuery]
+    private string? ReturnUrl { get; set; }
+
+    private string? errorMessage;
+
+    private async Task OnSubmitAsync()
+    {
+        var code = Input.Code?.Replace(" ", "").Replace("-", "") ?? "";
+
+        var result = await SignInManager.TwoFactorAuthenticatorSignInAsync(
+            code, RememberMe, Input.RememberClient);
+
+        if (result.Succeeded)
+        {
+            var redirectUrl = string.IsNullOrEmpty(ReturnUrl) ? "/de/dashboard" : ReturnUrl;
+            Navigation.NavigateTo(redirectUrl, forceLoad: true);
+            return;
+        }
+
+        if (result.IsLockedOut)
+        {
+            errorMessage = "Ihr Konto wurde vorübergehend gesperrt. Bitte versuchen Sie es später erneut.";
+        }
+        else
+        {
+            errorMessage = "Ungültiger Code. Bitte versuchen Sie es erneut.";
+        }
+    }
+
+    private sealed class TwoFactorInput
+    {
+        public string Code { get; set; } = string.Empty;
+        public bool RememberClient { get; set; }
+    }
+}

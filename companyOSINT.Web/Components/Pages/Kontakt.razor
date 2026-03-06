@@ -1,0 +1,118 @@
+@page "/de/kontakt"
+@using companyOSINT.Infrastructure.Email
+@using companyOSINT.Infrastructure.Turnstile
+@using Microsoft.Extensions.Options
+@inject IContactEmailService ContactEmail
+@inject ITurnstileValidationService Turnstile
+@inject IOptions<TurnstileSettings> TurnstileOptions
+@inject ILogger<Kontakt> Logger
+
+<PageTitle>Kontakt - company-OSINT.com</PageTitle>
+
+<section class="content-page">
+    <div class="container" style="max-width: 720px;">
+        <h1>Kontakt</h1>
+        <p class="text-muted mb-4">
+            Haben Sie Fragen zu company-OSINT.com oder möchten Sie mehr erfahren?
+            Schreiben Sie uns &mdash; wir melden uns schnellstmöglich zurück.
+        </p>
+
+        <div class="auth-card">
+            @if (success)
+            {
+                <div class="alert alert-success" role="alert">
+                    <i class="bi bi-check-circle me-1"></i>
+                    Vielen Dank für Ihre Nachricht! Wir melden uns schnellstmöglich bei Ihnen.
+                </div>
+            }
+
+            @if (error is not null)
+            {
+                <div class="alert alert-danger" role="alert">
+                    <i class="bi bi-exclamation-triangle me-1"></i>
+                    @error
+                </div>
+            }
+
+            @if (!success)
+            {
+                <form method="post" @formname="contact" @onsubmit="OnSubmitAsync">
+                    <AntiforgeryToken />
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Name</label>
+                        <input type="text" class="form-control" id="name" name="Input.Name"
+                               placeholder="Ihr Name" @bind="Input.Name" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="email" class="form-label">E-Mail-Adresse</label>
+                        <input type="email" class="form-control" id="email" name="Input.Email"
+                               placeholder="name@firma.de" @bind="Input.Email" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="message" class="form-label">Nachricht</label>
+                        <textarea class="form-control" id="message" name="Input.Message" rows="5"
+                                  placeholder="Ihre Nachricht..." @bind="Input.Message" required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <div class="cf-turnstile" data-sitekey="@TurnstileOptions.Value.SiteKey"></div>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        Nachricht senden
+                    </button>
+                </form>
+            }
+        </div>
+    </div>
+</section>
+
+@code {
+    private ContactInput _input = new();
+
+    [SupplyParameterFromForm]
+    private ContactInput Input { get => _input; set => _input = value ?? new(); }
+
+    [SupplyParameterFromForm(Name = "cf-turnstile-response")]
+    private string? TurnstileResponse { get; set; }
+
+    private bool success;
+    private string? error;
+
+    private async Task OnSubmitAsync()
+    {
+        error = null;
+
+        if (string.IsNullOrWhiteSpace(Input.Name) ||
+            string.IsNullOrWhiteSpace(Input.Email) ||
+            string.IsNullOrWhiteSpace(Input.Message))
+        {
+            error = "Bitte füllen Sie alle Felder aus.";
+            return;
+        }
+
+        var turnstileValid = await Turnstile.ValidateAsync(TurnstileResponse ?? string.Empty);
+        if (!turnstileValid)
+        {
+            error = "Die Captcha-Überprüfung ist fehlgeschlagen. Bitte versuchen Sie es erneut.";
+            return;
+        }
+
+        try
+        {
+            await ContactEmail.SendContactEmailAsync(Input.Name, Input.Email, Input.Message);
+            success = true;
+            _input = new();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Kontaktformular: E-Mail-Versand fehlgeschlagen");
+            error = "Beim Senden Ihrer Nachricht ist ein Fehler aufgetreten. Bitte versuchen Sie es später erneut.";
+        }
+    }
+
+    private sealed class ContactInput
+    {
+        public string Name { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string Message { get; set; } = string.Empty;
+    }
+}

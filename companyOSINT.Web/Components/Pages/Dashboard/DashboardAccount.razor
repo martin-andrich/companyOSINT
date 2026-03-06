@@ -1,0 +1,444 @@
+@page "/de/dashboard/konto"
+@layout DashboardLayout
+@attribute [Authorize]
+@rendermode RenderMode.InteractiveServer
+@using companyOSINT.Infrastructure.Identity
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.WebUtilities
+@using System.Text
+@using System.Text.Encodings.Web
+@inject UserManager<ApplicationUser> UserManager
+@inject SignInManager<ApplicationUser> SignInManager
+@inject IEmailSender<ApplicationUser> EmailSender
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager Navigation
+
+<PageTitle>Mein Konto - company-OSINT.com</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">Mein Konto</h1>
+</div>
+
+@if (user is not null)
+{
+    @* Card 1: Profil *@
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <h5 class="card-title mb-3">
+                <i class="bi bi-person me-2"></i>Profil
+            </h5>
+
+            @if (!string.IsNullOrEmpty(profileSuccess))
+            {
+                <div class="alert alert-success" role="alert">
+                    <i class="bi bi-check-circle me-1"></i> @profileSuccess
+                </div>
+            }
+            @if (profileErrors.Count > 0)
+            {
+                <div class="alert alert-danger" role="alert">
+                    <i class="bi bi-exclamation-triangle me-1"></i>
+                    @foreach (var error in profileErrors)
+                    {
+                        <span>@error</span>
+                    }
+                </div>
+            }
+
+            <div class="row g-3">
+                <div class="col-sm-6">
+                    <label for="firstName" class="form-label text-muted small mb-1">Vorname</label>
+                    <input type="text" class="form-control" id="firstName"
+                           @bind="editFirstName" required />
+                </div>
+                <div class="col-sm-6">
+                    <label for="lastName" class="form-label text-muted small mb-1">Nachname</label>
+                    <input type="text" class="form-control" id="lastName"
+                           @bind="editLastName" required />
+                </div>
+                <div class="col-sm-6">
+                    <label for="companyName" class="form-label text-muted small mb-1">Firma <span class="text-muted">(optional)</span></label>
+                    <input type="text" class="form-control" id="companyName"
+                           @bind="editCompanyName" />
+                </div>
+                <div class="col-sm-6">
+                    <div class="text-muted small mb-1">Mitglied seit</div>
+                    <div class="form-control-plaintext">@user.DateCreated.ToString("dd.MM.yyyy")</div>
+                </div>
+            </div>
+            <div class="mt-3">
+                <button class="btn btn-primary btn-sm" @onclick="SaveProfileAsync" disabled="@profileSaving">
+                    @if (profileSaving)
+                    {
+                        <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                    }
+                    <i class="bi bi-check-lg me-1"></i>Änderungen speichern
+                </button>
+            </div>
+        </div>
+    </div>
+
+    @* Card 2: E-Mail ändern *@
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <h5 class="card-title mb-3">
+                <i class="bi bi-envelope me-2"></i>E-Mail-Adresse ändern
+            </h5>
+
+            @if (!string.IsNullOrEmpty(emailSuccess))
+            {
+                <div class="alert alert-success" role="alert">
+                    <i class="bi bi-check-circle me-1"></i> @emailSuccess
+                </div>
+            }
+            @if (emailErrors.Count > 0)
+            {
+                <div class="alert alert-danger" role="alert">
+                    <i class="bi bi-exclamation-triangle me-1"></i>
+                    @foreach (var error in emailErrors)
+                    {
+                        <span>@error</span>
+                    }
+                </div>
+            }
+
+            <div class="row g-3">
+                <div class="col-sm-6">
+                    <div class="text-muted small mb-1">Aktuelle E-Mail</div>
+                    <div class="form-control-plaintext">@user.Email</div>
+                </div>
+                <div class="col-sm-6">
+                    <label for="newEmail" class="form-label text-muted small mb-1">Neue E-Mail-Adresse</label>
+                    <input type="email" class="form-control" id="newEmail"
+                           @bind="newEmail" placeholder="neue@email.de" />
+                </div>
+            </div>
+            <div class="mt-3">
+                <button class="btn btn-primary btn-sm" @onclick="ChangeEmailAsync" disabled="@emailSaving">
+                    @if (emailSaving)
+                    {
+                        <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                    }
+                    <i class="bi bi-envelope-arrow-up me-1"></i>E-Mail ändern
+                </button>
+            </div>
+        </div>
+    </div>
+
+    @* Card 3: Passwort ändern *@
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <h5 class="card-title mb-3">
+                <i class="bi bi-key me-2"></i>Passwort ändern
+            </h5>
+
+            @if (!string.IsNullOrEmpty(passwordSuccess))
+            {
+                <div class="alert alert-success" role="alert">
+                    <i class="bi bi-check-circle me-1"></i> @passwordSuccess
+                </div>
+            }
+            @if (passwordErrors.Count > 0)
+            {
+                <div class="alert alert-danger" role="alert">
+                    <i class="bi bi-exclamation-triangle me-1"></i>
+                    <ul class="mb-0 ps-3">
+                        @foreach (var error in passwordErrors)
+                        {
+                            <li>@error</li>
+                        }
+                    </ul>
+                </div>
+            }
+
+            <div class="row g-3">
+                <div class="col-sm-6">
+                    <label for="currentPassword" class="form-label text-muted small mb-1">Aktuelles Passwort</label>
+                    <input type="password" class="form-control" id="currentPassword"
+                           @bind="currentPassword" />
+                </div>
+                <div class="col-sm-6"></div>
+                <div class="col-sm-6">
+                    <label for="newPassword" class="form-label text-muted small mb-1">Neues Passwort</label>
+                    <input type="password" class="form-control" id="newPassword"
+                           @bind="newPassword" placeholder="Mindestens 8 Zeichen" />
+                </div>
+                <div class="col-sm-6">
+                    <label for="confirmPassword" class="form-label text-muted small mb-1">Neues Passwort bestätigen</label>
+                    <input type="password" class="form-control" id="confirmPassword"
+                           @bind="confirmPassword" />
+                </div>
+            </div>
+            <div class="mt-3">
+                <button class="btn btn-primary btn-sm" @onclick="ChangePasswordAsync" disabled="@passwordSaving">
+                    @if (passwordSaving)
+                    {
+                        <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                    }
+                    <i class="bi bi-check-lg me-1"></i>Passwort ändern
+                </button>
+            </div>
+        </div>
+    </div>
+
+    @* Card 4: 2FA (unverändert) *@
+    <div class="card border-0 shadow-sm">
+        <div class="card-body">
+            <h5 class="card-title mb-3">
+                <i class="bi bi-shield-lock me-2"></i>Zwei-Faktor-Authentifizierung (2FA)
+            </h5>
+
+            @if (twoFactorEnabled)
+            {
+                <div class="d-flex align-items-center mb-3">
+                    <span class="badge bg-success me-2">Aktiv</span>
+                    <span class="text-muted">Ihr Konto ist durch 2FA geschützt.</span>
+                </div>
+
+                @if (!string.IsNullOrEmpty(disableError))
+                {
+                    <div class="alert alert-danger" role="alert">
+                        <i class="bi bi-exclamation-triangle me-1"></i> @disableError
+                    </div>
+                }
+
+                @if (showDisableConfirm)
+                {
+                    <div class="border rounded p-3 bg-light">
+                        <p class="small text-muted mb-2">Geben Sie Ihr Passwort ein, um 2FA zu deaktivieren:</p>
+                        <div class="input-group">
+                            <input type="password" class="form-control" @bind="disablePassword"
+                                   placeholder="Passwort" />
+                            <button class="btn btn-danger" @onclick="DisableTwoFactorAsync">
+                                Deaktivieren
+                            </button>
+                            <button class="btn btn-outline-secondary" @onclick="() => showDisableConfirm = false">
+                                Abbrechen
+                            </button>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <button class="btn btn-outline-danger btn-sm" @onclick="() => showDisableConfirm = true">
+                        <i class="bi bi-shield-x me-1"></i>2FA deaktivieren
+                    </button>
+                }
+            }
+            else
+            {
+                <div class="d-flex align-items-center mb-3">
+                    <span class="badge bg-secondary me-2">Inaktiv</span>
+                    <span class="text-muted">Schützen Sie Ihr Konto mit einem zweiten Faktor.</span>
+                </div>
+
+                <a href="/de/dashboard/zwei-faktor-einrichten" class="btn btn-primary btn-sm">
+                    <i class="bi bi-shield-plus me-1"></i>2FA einrichten
+                </a>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    private ApplicationUser? user;
+    private bool twoFactorEnabled;
+
+    // Profile
+    private string editFirstName = string.Empty;
+    private string editLastName = string.Empty;
+    private string? editCompanyName;
+    private string? profileSuccess;
+    private List<string> profileErrors = new();
+    private bool profileSaving;
+
+    // Email
+    private string newEmail = string.Empty;
+    private string? emailSuccess;
+    private List<string> emailErrors = new();
+    private bool emailSaving;
+
+    // Password
+    private string currentPassword = string.Empty;
+    private string newPassword = string.Empty;
+    private string confirmPassword = string.Empty;
+    private string? passwordSuccess;
+    private List<string> passwordErrors = new();
+    private bool passwordSaving;
+
+    // 2FA
+    private bool showDisableConfirm;
+    private string disablePassword = string.Empty;
+    private string? disableError;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        user = await UserManager.GetUserAsync(authState.User);
+        if (user is not null)
+        {
+            twoFactorEnabled = await UserManager.GetTwoFactorEnabledAsync(user);
+            editFirstName = user.FirstName;
+            editLastName = user.LastName;
+            editCompanyName = user.CompanyName;
+        }
+    }
+
+    private async Task SaveProfileAsync()
+    {
+        profileSuccess = null;
+        profileErrors.Clear();
+        if (user is null) return;
+
+        if (string.IsNullOrWhiteSpace(editFirstName) || string.IsNullOrWhiteSpace(editLastName))
+        {
+            profileErrors.Add("Vorname und Nachname sind Pflichtfelder.");
+            return;
+        }
+
+        profileSaving = true;
+        try
+        {
+            user.FirstName = editFirstName.Trim();
+            user.LastName = editLastName.Trim();
+            user.CompanyName = string.IsNullOrWhiteSpace(editCompanyName) ? null : editCompanyName.Trim();
+
+            var result = await UserManager.UpdateAsync(user);
+            if (result.Succeeded)
+            {
+                profileSuccess = "Profildaten wurden gespeichert.";
+            }
+            else
+            {
+                foreach (var error in result.Errors)
+                    profileErrors.Add(error.Description);
+            }
+        }
+        finally
+        {
+            profileSaving = false;
+        }
+    }
+
+    private async Task ChangeEmailAsync()
+    {
+        emailSuccess = null;
+        emailErrors.Clear();
+        if (user is null) return;
+
+        if (string.IsNullOrWhiteSpace(newEmail))
+        {
+            emailErrors.Add("Bitte geben Sie eine neue E-Mail-Adresse ein.");
+            return;
+        }
+
+        if (string.Equals(newEmail.Trim(), user.Email, StringComparison.OrdinalIgnoreCase))
+        {
+            emailErrors.Add("Die neue E-Mail-Adresse ist identisch mit der aktuellen.");
+            return;
+        }
+
+        var existingUser = await UserManager.FindByEmailAsync(newEmail.Trim());
+        if (existingUser is not null)
+        {
+            emailErrors.Add("Diese E-Mail-Adresse wird bereits verwendet.");
+            return;
+        }
+
+        emailSaving = true;
+        try
+        {
+            var token = await UserManager.GenerateChangeEmailTokenAsync(user, newEmail.Trim());
+            var code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(token));
+            var confirmationLink = Navigation.ToAbsoluteUri(
+                $"/de/email-aendern-bestaetigen?userId={user.Id}&email={UrlEncoder.Default.Encode(newEmail.Trim())}&code={code}").AbsoluteUri;
+
+            await EmailSender.SendConfirmationLinkAsync(user, newEmail.Trim(), confirmationLink);
+            emailSuccess = "Eine Bestätigungsmail wurde an die neue Adresse gesendet. Bitte klicken Sie auf den Link in der E-Mail, um die Änderung abzuschließen.";
+            newEmail = string.Empty;
+        }
+        finally
+        {
+            emailSaving = false;
+        }
+    }
+
+    private async Task ChangePasswordAsync()
+    {
+        passwordSuccess = null;
+        passwordErrors.Clear();
+        if (user is null) return;
+
+        if (string.IsNullOrWhiteSpace(currentPassword))
+        {
+            passwordErrors.Add("Bitte geben Sie Ihr aktuelles Passwort ein.");
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(newPassword))
+        {
+            passwordErrors.Add("Bitte geben Sie ein neues Passwort ein.");
+            return;
+        }
+
+        if (newPassword != confirmPassword)
+        {
+            passwordErrors.Add("Die neuen Passwörter stimmen nicht überein.");
+            return;
+        }
+
+        passwordSaving = true;
+        try
+        {
+            var result = await UserManager.ChangePasswordAsync(user, currentPassword, newPassword);
+            if (result.Succeeded)
+            {
+                await SignInManager.RefreshSignInAsync(user);
+                passwordSuccess = "Ihr Passwort wurde erfolgreich geändert.";
+                currentPassword = string.Empty;
+                newPassword = string.Empty;
+                confirmPassword = string.Empty;
+            }
+            else
+            {
+                foreach (var error in result.Errors)
+                    passwordErrors.Add(TranslateError(error.Code));
+            }
+        }
+        finally
+        {
+            passwordSaving = false;
+        }
+    }
+
+    private async Task DisableTwoFactorAsync()
+    {
+        disableError = null;
+        if (user is null) return;
+
+        if (!await UserManager.CheckPasswordAsync(user, disablePassword))
+        {
+            disableError = "Falsches Passwort.";
+            return;
+        }
+
+        await UserManager.SetTwoFactorEnabledAsync(user, false);
+        await UserManager.ResetAuthenticatorKeyAsync(user);
+        await SignInManager.RefreshSignInAsync(user);
+
+        twoFactorEnabled = false;
+        showDisableConfirm = false;
+        disablePassword = string.Empty;
+    }
+
+    private static string TranslateError(string errorCode) => errorCode switch
+    {
+        "PasswordMismatch" => "Das aktuelle Passwort ist falsch.",
+        "PasswordTooShort" => "Das neue Passwort muss mindestens 8 Zeichen lang sein.",
+        "PasswordRequiresDigit" => "Das Passwort muss mindestens eine Ziffer enthalten.",
+        "PasswordRequiresUpper" => "Das Passwort muss mindestens einen Großbuchstaben enthalten.",
+        "PasswordRequiresLower" => "Das Passwort muss mindestens einen Kleinbuchstaben enthalten.",
+        "PasswordRequiresNonAlphanumeric" => "Das Passwort muss mindestens ein Sonderzeichen enthalten.",
+        _ => "Ein unbekannter Fehler ist aufgetreten. Bitte versuchen Sie es erneut."
+    };
+}

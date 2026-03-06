@@ -1,0 +1,198 @@
+@page "/de/mcp-server"
+
+<PageTitle>MCP-Server - company-OSINT.com</PageTitle>
+
+<section class="content-page">
+    <div class="container" style="max-width: 720px;">
+        <h1>MCP-Server</h1>
+        <p class="text-muted mb-4">
+            Mit dem company-OSINT.com MCP-Server können KI-Agenten unsere Firmendatenbank
+            direkt abfragen und filtern &mdash; vollautomatisch und ohne manuellen Aufwand.
+        </p>
+
+        <h2>Was ist MCP?</h2>
+        <p>
+            Das <strong>Model Context Protocol (MCP)</strong> ist ein offener Standard, der es
+            KI-Agenten ermöglicht, strukturiert auf externe Datenquellen und Werkzeuge zuzugreifen.
+            Über unseren MCP-Server kann Ihr Agent die Firmendatenbank durchsuchen, nach Branche,
+            Standort oder Technologie filtern und detaillierte Firmeninformationen abrufen.
+        </p>
+
+        <h2>Voraussetzungen</h2>
+        <ol>
+            <li>Ein <strong>Benutzerkonto</strong> bei company-OSINT.com</li>
+            <li>Ein <strong>API-Token</strong>, erstellt über Ihr <a href="/de/dashboard/api-token">Dashboard</a></li>
+            <li>Ein MCP-kompatibler Client (z.&thinsp;B. Claude Desktop, Cursor, Claude Code oder ein eigener Agent)</li>
+        </ol>
+
+        <h2>Konfiguration</h2>
+        <p>
+            Fügen Sie folgenden Eintrag in die MCP-Server-Konfiguration Ihres Clients ein.
+            Ersetzen Sie <code>&lt;IHR_TOKEN&gt;</code> durch den Token aus Ihrem Dashboard.
+        </p>
+        <div class="mcp-code-block">
+            <div class="mcp-code-header">
+                <span>mcp_config.json</span>
+            </div>
+<pre><code>{
+  "mcpServers": {
+    "find-a-company": {
+      "url": "https://www.company-osint.com/mcp",
+      "headers": {
+        "Authorization": "Bearer &lt;IHR_TOKEN&gt;"
+      }
+    }
+  }
+}</code></pre>
+        </div>
+        <p class="text-muted" style="font-size: 0.85rem;">
+            <i class="bi bi-info-circle me-1"></i>
+            Die genaue Stelle der Konfigurationsdatei hängt von Ihrem Client ab.
+            Bei Claude Desktop ist es z.&thinsp;B. <code>claude_desktop_config.json</code>,
+            bei Claude Code die Datei <code>.mcp.json</code> im Projektverzeichnis.
+        </p>
+
+        <h2>Verfügbare Tools</h2>
+        <p>Der MCP-Server stellt folgende Werkzeuge bereit:</p>
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead>
+                    <tr>
+                        <th>Tool</th>
+                        <th>Beschreibung</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>search_companies</code></td>
+                        <td>Firmen suchen &mdash; nach PLZ &amp; Umkreis, Branche, eingesetzter Software, Tools, SSL, Consent-Manager u.&thinsp;v.&thinsp;m.</td>
+                    </tr>
+                    <tr>
+                        <td><code>get_company_details</code></td>
+                        <td>Vollständige Details zu einer Firma abrufen: Kontakte, Websites, erkannte Software und Tools</td>
+                    </tr>
+                    <tr>
+                        <td><code>list_sectors</code></td>
+                        <td>Alle verfügbaren Branchen mit ID und Namen auflisten (als Filter für <code>search_companies</code>)</td>
+                    </tr>
+                    <tr>
+                        <td><code>list_software</code></td>
+                        <td>Erkannte CMS- und Software-Namen auflisten (z.&thinsp;B. WordPress, Shopware, TYPO3)</td>
+                    </tr>
+                    <tr>
+                        <td><code>list_tools</code></td>
+                        <td>Erkannte Web-Tool-Namen auflisten (z.&thinsp;B. Google Analytics, Cloudflare, Matomo)</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h2>Beispiel-Workflow</h2>
+        <p>Ein typischer Ablauf für einen KI-Agenten:</p>
+        <div class="mcp-steps">
+            <div class="mcp-step">
+                <div class="mcp-step-number">1</div>
+                <div>
+                    <strong>Filter-Optionen abrufen</strong><br>
+                    <span class="text-muted">
+                        <code>list_sectors</code>, <code>list_software</code> und <code>list_tools</code>
+                        aufrufen, um verfügbare Filterwerte zu erhalten.
+                    </span>
+                </div>
+            </div>
+            <div class="mcp-step">
+                <div class="mcp-step-number">2</div>
+                <div>
+                    <strong>Firmen suchen</strong><br>
+                    <span class="text-muted">
+                        <code>search_companies</code> mit den gewünschten Filtern aufrufen,
+                        z.&thinsp;B. alle WordPress-Shops im Umkreis von 50&thinsp;km um Dresden.
+                    </span>
+                </div>
+            </div>
+            <div class="mcp-step">
+                <div class="mcp-step-number">3</div>
+                <div>
+                    <strong>Details abrufen</strong><br>
+                    <span class="text-muted">
+                        Für interessante Treffer <code>get_company_details</code> aufrufen,
+                        um Kontakte, Websites und technische Details zu erhalten.
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <h2>Suchfilter im Detail</h2>
+        <p>Das Tool <code>search_companies</code> unterstützt folgende Filter:</p>
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead>
+                    <tr>
+                        <th>Parameter</th>
+                        <th>Beschreibung</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>postalCode</code> + <code>radiusKm</code></td>
+                        <td>Umkreissuche um eine deutsche PLZ (Standard: 50&thinsp;km)</td>
+                    </tr>
+                    <tr>
+                        <td><code>sectorIds</code></td>
+                        <td>Branchenfilter (IDs über <code>list_sectors</code>)</td>
+                    </tr>
+                    <tr>
+                        <td><code>softwareNames</code></td>
+                        <td>Nach CMS/Software filtern, z.&thinsp;B. <code>["WordPress", "Shopware"]</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>toolNames</code></td>
+                        <td>Nach Web-Tools filtern, z.&thinsp;B. <code>["Google Analytics"]</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>sslValid</code></td>
+                        <td>Nur Firmen mit gültigem/ungültigem SSL-Zertifikat</td>
+                    </tr>
+                    <tr>
+                        <td><code>consentManagerFound</code></td>
+                        <td>Nur Firmen mit/ohne Consent-Manager</td>
+                    </tr>
+                    <tr>
+                        <td><code>hasWebsite</code></td>
+                        <td>Nur Firmen mit/ohne Website</td>
+                    </tr>
+                    <tr>
+                        <td><code>ttfbCategory</code></td>
+                        <td>Ladezeit: <code>fast</code> (&le;800ms), <code>medium</code> (800–1800ms), <code>slow</code> (&gt;1800ms)</td>
+                    </tr>
+                    <tr>
+                        <td><code>hasRequestsWithoutConsent</code></td>
+                        <td>Firmen deren Website Anfragen ohne Einwilligung stellt</td>
+                    </tr>
+                    <tr>
+                        <td><code>page</code> + <code>pageSize</code></td>
+                        <td>Paginierung (Standard: Seite 1, 25 Ergebnisse, max. 100)</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h2>Authentifizierung</h2>
+        <p>
+            Jede Anfrage an den MCP-Server muss ein gültiges API-Token im
+            <code>Authorization</code>-Header mitschicken. Token erstellen Sie in Ihrem
+            <a href="/de/dashboard/api-token">API-Token Dashboard</a>.
+        </p>
+        <ul>
+            <li>Token-Format: <code>fac_…</code> (wird bei Erstellung einmalig angezeigt)</li>
+            <li>Token haben ein Ablaufdatum &mdash; danach werden Anfragen abgelehnt</li>
+            <li>Ungültige oder fehlende Token führen zu einer <code>401 Unauthorized</code>-Antwort</li>
+        </ul>
+
+        <p class="text-muted" style="font-size: 0.85rem;">
+            <i class="bi bi-shield-lock me-1"></i>
+            Behandeln Sie Ihr API-Token wie ein Passwort.
+            Geben Sie es nicht weiter und speichern Sie es nicht im Klartext in öffentlichen Repositories.
+        </p>
+    </div>
+</section>

@@ -1,0 +1,51 @@
+@inherits LayoutComponentBase
+@layout MainLayout
+@attribute [Authorize]
+
+<div class="dashboard-wrapper d-flex">
+    <nav class="d-none d-md-block dashboard-sidebar">
+        <div class="px-3">
+            <h6 class="text-muted small text-uppercase mb-3">Dashboard</h6>
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <NavLink class="nav-link" href="/de/dashboard" Match="NavLinkMatch.All">
+                        <i class="bi bi-house me-2"></i> Dashboard
+                    </NavLink>
+                </li>
+                <li class="nav-item">
+                    <NavLink class="nav-link" href="/de/dashboard/suche">
+                        <i class="bi bi-search me-2"></i> Suche
+                    </NavLink>
+                </li>
+                <li class="nav-item">
+                    <NavLink class="nav-link" href="/de/dashboard/projekte">
+                        <i class="bi bi-folder me-2"></i> Projekte
+                    </NavLink>
+                </li>
+                <li class="nav-item">
+                    <NavLink class="nav-link" href="/de/dashboard/merkliste">
+                        <i class="bi bi-bookmark me-2"></i> Merkliste
+                    </NavLink>
+                </li>
+                <li class="nav-item">
+                    <NavLink class="nav-link" href="/de/dashboard/api-token">
+                        <i class="bi bi-key me-2"></i> API-Token
+                    </NavLink>
+                </li>
+                <li class="nav-item">
+                    <NavLink class="nav-link" href="/de/dashboard/konto">
+                        <i class="bi bi-person me-2"></i> Mein Konto
+                    </NavLink>
+                </li>
+                <li class="nav-item mt-3">
+                    <a class="nav-link text-danger" href="/de/abmelden">
+                        <i class="bi bi-box-arrow-left me-2"></i> Abmelden
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+    <main class="dashboard-main px-md-4 py-4">
+        @Body
+    </main>
+</div>

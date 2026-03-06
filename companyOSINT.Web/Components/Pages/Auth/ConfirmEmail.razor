@@ -1,0 +1,57 @@
+@page "/de/email-bestaetigen"
+@using companyOSINT.Infrastructure.Identity
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.WebUtilities
+@using System.Text
+@inject UserManager<ApplicationUser> UserManager
+
+<PageTitle>E-Mail bestätigen - company-OSINT.com</PageTitle>
+
+<section class="content-page">
+    <div class="container">
+        <div class="auth-card text-center">
+            @if (confirmed)
+            {
+                <i class="bi bi-check-circle fs-1 text-success d-block mb-3"></i>
+                <h1 class="h3 mb-3">E-Mail bestätigt</h1>
+                <p class="text-muted mb-4">
+                    Ihre E-Mail-Adresse wurde erfolgreich bestätigt. Sie können sich jetzt anmelden.
+                </p>
+                <a href="/de/anmelden" class="btn btn-primary">Jetzt anmelden</a>
+            }
+            else
+            {
+                <i class="bi bi-x-circle fs-1 text-danger d-block mb-3"></i>
+                <h1 class="h3 mb-3">Bestätigung fehlgeschlagen</h1>
+                <p class="text-muted mb-4">
+                    Der Bestätigungslink ist ungültig oder abgelaufen. Bitte registrieren Sie sich erneut.
+                </p>
+                <a href="/de/registrieren" class="btn btn-primary">Erneut registrieren</a>
+            }
+        </div>
+    </div>
+</section>
+
+@code {
+    [SupplyParameterFromQuery]
+    private string? UserId { get; set; }
+
+    [SupplyParameterFromQuery]
+    private string? Code { get; set; }
+
+    private bool confirmed;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (string.IsNullOrEmpty(UserId) || string.IsNullOrEmpty(Code))
+            return;
+
+        var user = await UserManager.FindByIdAsync(UserId);
+        if (user is null)
+            return;
+
+        var token = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(Code));
+        var result = await UserManager.ConfirmEmailAsync(user, token);
+        confirmed = result.Succeeded;
+    }
+}

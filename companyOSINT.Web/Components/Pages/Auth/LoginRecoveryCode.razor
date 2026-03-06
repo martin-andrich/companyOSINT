@@ -1,0 +1,78 @@
+@page "/de/recovery-code"
+@using companyOSINT.Infrastructure.Identity
+@using Microsoft.AspNetCore.Identity
+@inject SignInManager<ApplicationUser> SignInManager
+@inject NavigationManager Navigation
+
+<PageTitle>Recovery-Code - company-OSINT.com</PageTitle>
+
+<section class="content-page">
+    <div class="container">
+        <div class="text-center mb-4">
+            <h1 class="h3">Recovery-Code</h1>
+            <p class="text-muted">Geben Sie einen Ihrer Recovery-Codes ein, um sich anzumelden.</p>
+        </div>
+
+        <div class="auth-card">
+            @if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <div class="alert alert-danger" role="alert">
+                    <i class="bi bi-exclamation-triangle me-1"></i> @errorMessage
+                </div>
+            }
+
+            <form method="post" @formname="recovery-code" @onsubmit="OnSubmitAsync">
+                <AntiforgeryToken />
+                <div class="mb-3">
+                    <label for="recoveryCode" class="form-label">Recovery-Code</label>
+                    <input type="text" class="form-control" id="recoveryCode"
+                           name="Input.RecoveryCode" @bind="Input.RecoveryCode" required
+                           autocomplete="off" placeholder="XXXXX-XXXXX" />
+                </div>
+                <button type="submit" class="btn btn-primary w-100">
+                    Anmelden
+                </button>
+            </form>
+            <hr class="my-4" />
+            <p class="text-center small mb-0">
+                <a href="/de/zwei-faktor" class="text-decoration-none">Zurück zur Code-Eingabe</a>
+            </p>
+        </div>
+    </div>
+</section>
+
+@code {
+    private RecoveryInput _input = new();
+
+    [SupplyParameterFromForm]
+    private RecoveryInput Input { get => _input; set => _input = value ?? new(); }
+
+    private string? errorMessage;
+
+    private async Task OnSubmitAsync()
+    {
+        var code = Input.RecoveryCode?.Replace(" ", "") ?? "";
+
+        var result = await SignInManager.TwoFactorRecoveryCodeSignInAsync(code);
+
+        if (result.Succeeded)
+        {
+            Navigation.NavigateTo("/de/dashboard", forceLoad: true);
+            return;
+        }
+
+        if (result.IsLockedOut)
+        {
+            errorMessage = "Ihr Konto wurde vorübergehend gesperrt. Bitte versuchen Sie es später erneut.";
+        }
+        else
+        {
+            errorMessage = "Ungültiger Recovery-Code. Bitte versuchen Sie es erneut.";
+        }
+    }
+
+    private sealed class RecoveryInput
+    {
+        public string RecoveryCode { get; set; } = string.Empty;
+    }
+}

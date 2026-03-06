@@ -1,0 +1,191 @@
+@page "/de/dashboard/zwei-faktor-einrichten"
+@layout DashboardLayout
+@attribute [Authorize]
+@rendermode RenderMode.InteractiveServer
+@using companyOSINT.Infrastructure.Identity
+@using Microsoft.AspNetCore.Identity
+@using QRCoder
+@inject UserManager<ApplicationUser> UserManager
+@inject SignInManager<ApplicationUser> SignInManager
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager Navigation
+
+<PageTitle>2FA einrichten - company-OSINT.com</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">Zwei-Faktor-Authentifizierung einrichten</h1>
+</div>
+
+@if (step == SetupStep.ShowQrCode)
+{
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <h5 class="card-title mb-3">Schritt 1: QR-Code scannen</h5>
+            <p class="text-muted">
+                Scannen Sie den QR-Code mit Ihrer Authenticator-App
+                (z.B. Google Authenticator, Microsoft Authenticator oder Authy).
+            </p>
+
+            <div class="text-center my-4">
+                @if (!string.IsNullOrEmpty(qrCodeBase64))
+                {
+                    <img src="data:image/png;base64,@qrCodeBase64" alt="QR-Code für 2FA"
+                         style="max-width: 250px; image-rendering: pixelated;" />
+                }
+            </div>
+
+            <div class="bg-light rounded p-3 mb-4">
+                <p class="small text-muted mb-1">Falls Sie den QR-Code nicht scannen können, geben Sie diesen Schlüssel manuell ein:</p>
+                <code class="user-select-all" style="letter-spacing: 3px;">@formattedKey</code>
+            </div>
+
+            <h5 class="card-title mb-3">Schritt 2: Code bestätigen</h5>
+            <p class="text-muted">
+                Geben Sie den 6-stelligen Code aus Ihrer Authenticator-App ein, um die Einrichtung abzuschließen.
+            </p>
+
+            @if (!string.IsNullOrEmpty(verifyError))
+            {
+                <div class="alert alert-danger" role="alert">
+                    <i class="bi bi-exclamation-triangle me-1"></i> @verifyError
+                </div>
+            }
+
+            <div class="input-group" style="max-width: 300px;">
+                <input type="text" class="form-control text-center fs-4" style="letter-spacing: 0.3em;" @bind="verifyCode"
+                       autocomplete="one-time-code" inputmode="numeric" maxlength="6"
+                       placeholder="000000" />
+                <button class="btn btn-primary" @onclick="VerifyCodeAsync">
+                    Bestätigen
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <a href="/de/dashboard/konto" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i>Abbrechen
+    </a>
+}
+else if (step == SetupStep.ShowRecoveryCodes)
+{
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <div class="d-flex align-items-center mb-3">
+                <i class="bi bi-check-circle text-success fs-3 me-2"></i>
+                <h5 class="card-title mb-0">2FA erfolgreich aktiviert</h5>
+            </div>
+
+            <div class="alert alert-warning" role="alert">
+                <i class="bi bi-exclamation-triangle me-1"></i>
+                <strong>Wichtig:</strong> Speichern Sie die folgenden Recovery-Codes an einem sicheren Ort.
+                Sie können damit auf Ihr Konto zugreifen, falls Sie Ihre Authenticator-App verlieren.
+                Jeder Code kann nur einmal verwendet werden.
+            </div>
+
+            <div class="bg-light rounded p-3 mb-4">
+                <div class="row g-2">
+                    @if (recoveryCodes is not null)
+                    {
+                        @foreach (var recoveryCode in recoveryCodes)
+                        {
+                            <div class="col-6 col-md-4">
+                                <code class="user-select-all">@recoveryCode</code>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+
+            <a href="/de/dashboard/konto" class="btn btn-primary">
+                <i class="bi bi-check-lg me-1"></i>Fertig
+            </a>
+        </div>
+    </div>
+}
+
+@code {
+    private enum SetupStep { ShowQrCode, ShowRecoveryCodes }
+
+    private ApplicationUser? user;
+    private SetupStep step = SetupStep.ShowQrCode;
+    private string? qrCodeBase64;
+    private string? sharedKey;
+    private string? formattedKey;
+    private string verifyCode = string.Empty;
+    private string? verifyError;
+    private IEnumerable<string>? recoveryCodes;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        user = await UserManager.GetUserAsync(authState.User);
+        if (user is null) return;
+
+        // Falls 2FA bereits aktiv, zurück zur Konto-Seite
+        if (await UserManager.GetTwoFactorEnabledAsync(user))
+        {
+            Navigation.NavigateTo("/de/dashboard/konto");
+            return;
+        }
+
+        await LoadKeyAsync();
+    }
+
+    private async Task LoadKeyAsync()
+    {
+        if (user is null) return;
+
+        sharedKey = await UserManager.GetAuthenticatorKeyAsync(user);
+        if (string.IsNullOrEmpty(sharedKey))
+        {
+            await UserManager.ResetAuthenticatorKeyAsync(user);
+            sharedKey = await UserManager.GetAuthenticatorKeyAsync(user);
+        }
+
+        formattedKey = FormatKey(sharedKey!);
+
+        var email = await UserManager.GetEmailAsync(user);
+        var uri = $"otpauth://totp/Find-A-Company:{email}?secret={sharedKey}&issuer=Find-A-Company&digits=6";
+
+        using var qrGenerator = new QRCodeGenerator();
+        using var qrCodeData = qrGenerator.CreateQrCode(uri, QRCodeGenerator.ECCLevel.Q);
+        using var qrCode = new PngByteQRCode(qrCodeData);
+        var qrBytes = qrCode.GetGraphic(5);
+        qrCodeBase64 = Convert.ToBase64String(qrBytes);
+    }
+
+    private async Task VerifyCodeAsync()
+    {
+        verifyError = null;
+        if (user is null) return;
+
+        var code = verifyCode.Replace(" ", "").Replace("-", "");
+
+        var isValid = await UserManager.VerifyTwoFactorTokenAsync(
+            user, UserManager.Options.Tokens.AuthenticatorTokenProvider, code);
+
+        if (!isValid)
+        {
+            verifyError = "Ungültiger Code. Bitte versuchen Sie es erneut.";
+            return;
+        }
+
+        await UserManager.SetTwoFactorEnabledAsync(user, true);
+        recoveryCodes = await UserManager.GenerateNewTwoFactorRecoveryCodesAsync(user, 10);
+        await SignInManager.RefreshSignInAsync(user);
+
+        step = SetupStep.ShowRecoveryCodes;
+    }
+
+    private static string FormatKey(string key)
+    {
+        var chars = key.ToUpperInvariant().AsSpan();
+        var parts = new List<string>();
+        for (var i = 0; i < chars.Length; i += 4)
+        {
+            var length = Math.Min(4, chars.Length - i);
+            parts.Add(new string(chars.Slice(i, length)));
+        }
+        return string.Join(" ", parts);
+    }
+}

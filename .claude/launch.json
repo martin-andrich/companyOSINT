@@ -1,0 +1,18 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "web-api",
+      "runtimeExecutable": "dotnet",
+      "runtimeArgs": ["run", "--project", "FindACompany.Web"],
+      "port": 8085,
+      "autoPort": true
+    },
+    {
+      "name": "worker",
+      "runtimeExecutable": "dotnet",
+      "runtimeArgs": ["run", "--project", "FindACompany.Worker"],
+      "port": 0
+    }
+  ]
+}

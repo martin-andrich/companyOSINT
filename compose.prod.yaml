@@ -1,0 +1,75 @@
+services:
+  postgres:
+    image: postgres:latest
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: companyOSINT
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "127.0.0.1:18085:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  companyosint-web:
+    build:
+      context: .
+      dockerfile: companyOSINT.Web/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8085:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_HTTP_PORTS: "8080"
+      ConnectionStrings__DefaultConnection: "Host=postgres;Database=companyOSINT;Username=postgres;Password=${POSTGRES_PASSWORD}"
+      ApiKey: "${API_KEY}"
+      Smtp__Host: "${SMTP_HOST}"
+      Smtp__Port: "${SMTP_PORT:-587}"
+      Smtp__UserName: "${SMTP_USERNAME}"
+      Smtp__Password: "${SMTP_PASSWORD}"
+      Smtp__SenderEmail: "${SMTP_SENDER_EMAIL:-noreply@company-osint.com}"
+      Smtp__SenderName: "${SMTP_SENDER_NAME:-company-OSINT.com}"
+      ContactEmail: "${CONTACT_EMAIL:-info@company-osint.com}"
+      Turnstile__SiteKey: "${TURNSTILE_SITE_KEY}"
+      Turnstile__SecretKey: "${TURNSTILE_SECRET_KEY}"
+
+  companyosint-worker:
+    build:
+      context: .
+      dockerfile: companyOSINT.Worker/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      companyosint-web:
+        condition: service_started
+    environment:
+      ApiBaseUrl: "http://companyosint-web:8080"
+      ApiKey: "${API_KEY}"
+      OllamaUrl: "${OLLAMA_URL}"
+      OllamaModel: "${OLLAMA_MODEL:-qwen3.5:27b}"
+      SerperApiKey: "${SERPER_API_KEY}"
+    profiles:
+      - worker
+
+  companyosint-import:
+    build:
+      context: .
+      dockerfile: companyOSINT.Import/Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./handelsregister.db:/app/handelsregister.db:ro
+    command: ["/app/handelsregister.db", "Host=postgres;Database=companyOSINT;Username=postgres;Password=${POSTGRES_PASSWORD}"]
+    profiles:
+      - import
+
+volumes:
+  pgdata:

@@ -1,0 +1,15 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path=".env" />
+    <File Path="CLAUDE.md" />
+    <File Path="compose.prod.yaml" />
+    <File Path="compose.yaml" />
+    <File Path="README.md" />
+  </Folder>
+  <Project Path="companyOSINT.Domain/companyOSINT.Domain.csproj" />
+  <Project Path="companyOSINT.Application/companyOSINT.Application.csproj" />
+  <Project Path="companyOSINT.Infrastructure/companyOSINT.Infrastructure.csproj" />
+  <Project Path="companyOSINT.Web/companyOSINT.Web.csproj" />
+  <Project Path="companyOSINT.Worker/companyOSINT.Worker.csproj" />
+  <Project Path="companyOSINT.Import/companyOSINT.Import.csproj" />
+</Solution>
