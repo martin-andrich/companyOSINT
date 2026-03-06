@@ -243,6 +243,29 @@
     border-color: var(--fac-text-muted);
 }
 
+.btn-user-avatar {
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    font-size: 0.75rem;
+    font-weight: 600;
+    background: var(--fac-primary);
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-transform: uppercase;
+}
+
+.btn-user-avatar:hover {
+    opacity: 0.85;
+    box-shadow: 0 0 0 2px var(--fac-bg-white), 0 0 0 4px var(--fac-primary);
+}
+
 /* ─── Base ─── */
 html {
     font-size: 16px;
