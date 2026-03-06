@@ -8,6 +8,7 @@
 @inject ISectorService SectorService
 @inject IPostalCodeService PostalCodeService
 @inject IJSRuntime JS
+@inject NavigationManager Navigation
 
 <PageTitle>Demo – company-OSINT.com</PageTitle>
 
@@ -313,14 +314,13 @@
                                 <td class="fw-medium">@company.Name</td>
                                 <td class="text-muted">@company.RegisteredAddress</td>
                                 <td>
-                                    @if (!string.IsNullOrWhiteSpace(company.Website))
-                                    {
-                                        <a href="@company.Website" target="_blank" rel="noopener noreferrer" class="text-decoration-none">
-                                            @(new Uri(company.Website).Host)
-                                        </a>
-                                    }
+                                    <span class="demo-blur" role="button" title="Anmelden, um Website zu sehen"
+                                          @onclick="NavigateToDashboard">beispiel-website.de</span>
                                 </td>
-                                <td class="text-muted">@company.Activity</td>
+                                <td>
+                                    <span class="demo-blur" role="button" title="Anmelden, um Tätigkeit zu sehen"
+                                          @onclick="NavigateToDashboard">Beispieltätigkeit des Unternehmens</span>
+                                </td>
                             </tr>
                         }
                     </tbody>
@@ -559,6 +559,14 @@
                 string.IsNullOrEmpty(ttfbFilter) ? null : ttfbFilter,
                 rwcFilter switch { "with" => true, "without" => false, _ => (bool?)null },
                 currentPage, 25, ct);
+
+            // Strip sensitive data — demo page must not leak Website/Activity to the client
+            foreach (var item in result.Items)
+            {
+                item.Website = null;
+                item.Activity = null;
+            }
+
             hasSearched = true;
         }
         catch (TaskCanceledException)
@@ -602,5 +610,10 @@
         }
 
         return pages;
+    }
+
+    private void NavigateToDashboard()
+    {
+        Navigation.NavigateTo("/de/dashboard");
     }
 }

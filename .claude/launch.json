@@ -4,7 +4,7 @@
     {
       "name": "web-api",
       "runtimeExecutable": "dotnet",
-      "runtimeArgs": ["run", "--project", "FindACompany.Web"],
+      "runtimeArgs": ["run", "--project", "companyOSINT.Web"],
       "port": 8085,
       "autoPort": true
     },

@@ -1150,3 +1150,19 @@ h2 { font-size: 2.25rem; }
 .fade-up-delay-2 { animation-delay: 0.2s; }
 .fade-up-delay-3 { animation-delay: 0.3s; }
 .fade-up-delay-4 { animation-delay: 0.4s; }
+
+/* ─── Demo-Page: Paywall-Blur ─── */
+.demo-blur {
+    filter: blur(5px);
+    -webkit-filter: blur(5px);
+    user-select: none;
+    -webkit-user-select: none;
+    cursor: pointer;
+    transition: filter 0.2s ease;
+    color: var(--fac-text-muted, #64748b);
+}
+
+.demo-blur:hover {
+    filter: blur(3px);
+    color: var(--fac-primary);
+}
