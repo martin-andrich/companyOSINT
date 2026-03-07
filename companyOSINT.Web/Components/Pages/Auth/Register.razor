@@ -7,6 +7,7 @@
 @inject UserManager<ApplicationUser> UserManager
 @inject IEmailSender<ApplicationUser> EmailSender
 @inject NavigationManager Navigation
+@inject ILogger<Register> Logger
 
 <PageTitle>Registrieren - company-OSINT.com</PageTitle>
 
@@ -132,10 +133,9 @@
 
                 await EmailSender.SendConfirmationLinkAsync(user, Input.Email, confirmationLink);
             }
-            catch
+            catch (Exception ex)
             {
-                // E-Mail-Versand fehlgeschlagen — wird bereits in GraphEmailSender geloggt.
-                // Registrierung trotzdem abschließen.
+                Logger.LogError(ex, "Bestätigungs-E-Mail konnte nicht an {Email} gesendet werden", Input.Email);
             }
 
             Navigation.NavigateTo("/de/registrierung-bestaetigung", forceLoad: true);

@@ -7,6 +7,11 @@ services:
       ASPNETCORE_HTTP_PORTS: "8445"
       ConnectionStrings__DefaultConnection: "${CONNECTION_STRING:-Host=host.docker.internal;Database=companyOSINT;Username=postgres;Password=postgres}"
       ApiKey: "${API_KEY}"
+      GraphEmail__TenantId: "${GRAPH_EMAIL_TENANT_ID}"
+      GraphEmail__ClientId: "${GRAPH_EMAIL_CLIENT_ID}"
+      GraphEmail__ClientSecret: "${GRAPH_EMAIL_CLIENT_SECRET}"
+      GraphEmail__SenderEmail: "${GRAPH_EMAIL_SENDER_EMAIL:-noreply@company-osint.com}"
+      GraphEmail__SenderName: "${GRAPH_EMAIL_SENDER_NAME:-company-OSINT.com}"
 
   companyosint-worker:
     build:
