@@ -937,7 +937,7 @@ h2 { font-size: 2.25rem; }
 
 /* ─── Auth pages ─── */
 .auth-card {
-    max-width: 440px;
+    max-width: 540px;
     margin: 0 auto;
     border: 1px solid var(--fac-border);
     border-radius: var(--fac-radius-lg);

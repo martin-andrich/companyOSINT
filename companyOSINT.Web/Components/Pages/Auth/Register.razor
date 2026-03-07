@@ -22,7 +22,6 @@
             @if (errors.Count > 0)
             {
                 <div class="alert alert-danger" role="alert">
-                    <i class="bi bi-exclamation-triangle me-1"></i>
                     <ul class="mb-0 ps-3">
                         @foreach (var error in errors)
                         {
@@ -144,7 +143,9 @@
 
         foreach (var error in result.Errors)
         {
-            errors.Add(TranslateError(error.Code));
+            var translated = TranslateError(error.Code);
+            if (!errors.Contains(translated))
+                errors.Add(translated);
         }
     }
 
