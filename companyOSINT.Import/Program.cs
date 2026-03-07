@@ -50,6 +50,7 @@ using var reader = new SqliteCommand("""
     ORDER BY c.id
     """, sqlite).ExecuteReader();
 
+var todayIso = DateTime.UtcNow.ToString("yyyy-MM-dd");
 var companyIdMap = new Dictionary<int, Guid>();
 var seenContactIds = new HashSet<int>();
 long importedCompanies = 0;
@@ -83,9 +84,15 @@ while (reader.Read())
         });
     }
 
-    // Add contact if officer row is present (not NULL from LEFT JOIN)
+    // Add contact if officer row is present (not NULL from LEFT JOIN) and still active
     if (!reader.IsDBNull(8) && seenContactIds.Add(reader.GetInt32(8)))
     {
+        var endDate = Str(reader, 19);
+
+        // Skip contacts whose EndDate has already been reached (format: YYYY-MM-DD)
+        if (endDate is not null && string.Compare(endDate, todayIso, StringComparison.Ordinal) < 0)
+            continue;
+
         contactBatch.Add(new Contact
         {
             Id = Guid.NewGuid(),
@@ -100,7 +107,7 @@ while (reader.Read())
             Flag = Str(reader, 17),
             CompanyId = companyIdMap[companyIntId],
             StartDate = Str(reader, 18),
-            EndDate = Str(reader, 19),
+            EndDate = endDate,
             Dismissed = Str(reader, 20),
             ReferenceNo = Str(reader, 21),
         });
