@@ -109,10 +109,12 @@ public class GraphEmailSender(IOptions<GraphEmailSettings> options, ILogger<Grap
                     Message = message,
                     SaveToSentItems = false
                 });
+
+            logger.LogInformation("E-Mail erfolgreich gesendet an {Email} (Betreff: {Subject})", toEmail, subject);
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Fehler beim Senden der E-Mail an {Email}", toEmail);
+            logger.LogError(ex, "Fehler beim Senden der E-Mail an {Email} (Betreff: {Subject})", toEmail, subject);
             throw;
         }
     }
